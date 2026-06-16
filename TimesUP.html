@@ -1,0 +1,1583 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Time's Up!</title>
+<link href="https://fonts.googleapis.com/css2?family=Boogaloo&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0D0D1A;
+    --surface: #1A1A2E;
+    --card: #1E1E35;
+    --purple: #7B2FBE;
+    --purple-light: #9B59D8;
+    --yellow: #FFD600;
+    --green: #2ECC71;
+    --orange: #F39C12;
+    --red: #E74C3C;
+    --white: #F0EEF6;
+    --muted: #7A7A9A;
+    --border: #2A2A45;
+  }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--bg);
+    color: var(--white);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    overflow-x: hidden;
+  }
+
+  /* ── SCREENS ── */
+  .screen { display: none; width: 100%; max-width: 560px; }
+  .screen.active { display: flex; flex-direction: column; align-items: center; gap: 20px; }
+
+  /* ── HEADER ── */
+  .logo {
+    font-family: 'Boogaloo', cursive;
+    font-size: clamp(48px, 12vw, 80px);
+    color: var(--yellow);
+    letter-spacing: 2px;
+    line-height: 1;
+    text-shadow: 4px 4px 0 #a08000;
+  }
+  .logo span { color: var(--white); }
+  .tagline {
+    color: var(--muted);
+    font-size: 14px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+
+  /* ── BUTTONS ── */
+  .btn {
+    font-family: 'Boogaloo', cursive;
+    font-size: 22px;
+    letter-spacing: 1px;
+    padding: 14px 40px;
+    border: none;
+    border-radius: 50px;
+    cursor: pointer;
+    transition: transform 0.12s, box-shadow 0.12s;
+    text-transform: uppercase;
+  }
+  .btn:active { transform: scale(0.96); }
+
+  .btn-primary {
+    background: var(--yellow);
+    color: #0D0D1A;
+    box-shadow: 0 4px 0 #a08000;
+  }
+  .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 0 #a08000; }
+
+  .btn-success {
+    background: var(--green);
+    color: #0D0D1A;
+    box-shadow: 0 4px 0 #1a7a43;
+    font-size: 20px;
+    padding: 16px 32px;
+    flex: 1;
+  }
+  .btn-success:hover { transform: translateY(-2px); }
+
+  .btn-danger {
+    background: var(--red);
+    color: #fff;
+    box-shadow: 0 4px 0 #8b1a10;
+    font-size: 20px;
+    padding: 16px 32px;
+    flex: 1;
+  }
+  .btn-danger:hover { transform: translateY(-2px); }
+
+  .btn-ghost {
+    background: transparent;
+    color: var(--muted);
+    border: 2px solid var(--border);
+    font-size: 16px;
+    padding: 10px 24px;
+  }
+  .btn-ghost:hover { color: var(--white); border-color: var(--muted); }
+
+  /* ── SETTINGS PANEL ── */
+  .settings-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    width: 100%;
+  }
+  .setting-card {
+    background: var(--card);
+    border: 2px solid var(--border);
+    border-radius: 16px;
+    padding: 16px;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+    text-align: center;
+  }
+  .setting-card.selected {
+    border-color: var(--yellow);
+    background: rgba(255,214,0,0.06);
+  }
+  .setting-card .sc-label { font-size: 12px; color: var(--muted); margin-bottom: 4px; }
+  .setting-card .sc-value { font-family: 'Boogaloo', cursive; font-size: 26px; color: var(--white); }
+  .setting-card.selected .sc-value { color: var(--yellow); }
+
+  .section-label {
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+    align-self: flex-start;
+  }
+
+  /* ── CATEGORY TOGGLE ── */
+  .cat-grid { display: flex; flex-wrap: wrap; gap: 8px; width: 100%; }
+  .cat-pill {
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 8px 14px;
+    border-radius: 50px;
+    border: 2px solid var(--border);
+    background: transparent;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .cat-pill.active {
+    border-color: var(--purple);
+    color: var(--white);
+    background: rgba(123,47,190,0.2);
+  }
+
+  /* ── GAME SCREEN ── */
+  .timer-ring {
+    position: relative;
+    width: 120px;
+    height: 120px;
+  }
+  .timer-ring svg { transform: rotate(-90deg); }
+  .timer-ring circle {
+    fill: none;
+    stroke-width: 8;
+    stroke-linecap: round;
+    transition: stroke-dashoffset 1s linear, stroke 0.5s;
+  }
+  .timer-ring .bg-ring { stroke: var(--border); }
+  .timer-ring .progress-ring { stroke: var(--green); }
+  .timer-number {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    font-family: 'Boogaloo', cursive;
+    font-size: 36px;
+    color: var(--white);
+    transition: color 0.5s;
+  }
+
+  /* Word card */
+  .word-reveal-wrap {
+    width: 100%;
+    perspective: 800px;
+  }
+  .word-card {
+    background: var(--card);
+    border: 2px solid var(--border);
+    border-radius: 24px;
+    padding: 36px 24px;
+    text-align: center;
+    min-height: 180px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.3s;
+  }
+  .word-card.revealed { border-color: var(--purple); }
+  .word-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at 50% 0%, rgba(123,47,190,0.15) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .word-hidden {
+    font-family: 'Boogaloo', cursive;
+    font-size: 28px;
+    color: var(--muted);
+  }
+  .word-text {
+    font-family: 'Boogaloo', cursive;
+    font-size: clamp(28px, 8vw, 46px);
+    color: var(--white);
+    line-height: 1.1;
+    display: none;
+  }
+  .word-category {
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+    display: none;
+  }
+
+  .difficulty-badge {
+    display: none;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    font-weight: 600;
+  }
+  .star { color: var(--yellow); }
+  .diff-label { color: var(--muted); }
+
+  .reveal-btn {
+    font-family: 'Boogaloo', cursive;
+    font-size: 20px;
+    background: var(--purple);
+    color: #fff;
+    border: none;
+    border-radius: 50px;
+    padding: 12px 32px;
+    cursor: pointer;
+    box-shadow: 0 4px 0 #4a1870;
+    transition: transform 0.12s, box-shadow 0.12s;
+    letter-spacing: 1px;
+  }
+  .reveal-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 0 #4a1870; }
+  .reveal-btn:active { transform: scale(0.96); box-shadow: 0 2px 0 #4a1870; }
+
+  /* Action row */
+  .action-row {
+    display: flex;
+    gap: 12px;
+    width: 100%;
+    display: none;
+  }
+
+  /* Score chips */
+  .scores-row {
+    display: flex;
+    gap: 16px;
+    justify-content: center;
+  }
+  .score-chip {
+    background: var(--card);
+    border: 2px solid var(--border);
+    border-radius: 12px;
+    padding: 10px 20px;
+    text-align: center;
+  }
+  .score-chip .sc { font-family: 'Boogaloo', cursive; font-size: 28px; }
+  .score-chip .sl { font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); }
+  .score-chip.green .sc { color: var(--green); }
+  .score-chip.red .sc { color: var(--red); }
+  .score-chip.yellow .sc { color: var(--yellow); }
+
+  /* Progress bar */
+  .progress-bar {
+    width: 100%;
+    height: 4px;
+    background: var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    background: var(--purple);
+    border-radius: 4px;
+    transition: width 0.3s;
+  }
+
+  /* Pass counter */
+  .passes-left {
+    font-size: 13px;
+    color: var(--muted);
+  }
+  .passes-left span { color: var(--orange); font-weight: 700; }
+
+  /* ── END SCREEN ── */
+  .end-score {
+    font-family: 'Boogaloo', cursive;
+    font-size: 90px;
+    color: var(--yellow);
+    line-height: 1;
+    text-shadow: 4px 4px 0 #a08000;
+  }
+  .end-label { color: var(--muted); font-size: 14px; letter-spacing: 2px; text-transform: uppercase; }
+
+  .results-list {
+    width: 100%;
+    max-height: 260px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding-right: 4px;
+  }
+  .results-list::-webkit-scrollbar { width: 4px; }
+  .results-list::-webkit-scrollbar-track { background: var(--border); border-radius: 4px; }
+  .results-list::-webkit-scrollbar-thumb { background: var(--purple); border-radius: 4px; }
+
+  .result-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 14px;
+    background: var(--card);
+    border-radius: 10px;
+    font-size: 14px;
+  }
+  .result-item .ri-word { font-weight: 600; }
+  .result-item .ri-pts { font-family: 'Boogaloo', cursive; font-size: 18px; }
+  .result-item.ok { border-left: 3px solid var(--green); }
+  .result-item.ok .ri-pts { color: var(--green); }
+  .result-item.skip { border-left: 3px solid var(--red); opacity: 0.5; }
+  .result-item.skip .ri-pts { color: var(--red); }
+
+  /* ── TIMESUP ANIMATION ── */
+  .timesup-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(13,13,26,0.92);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s;
+  }
+  .timesup-overlay.show { opacity: 1; pointer-events: all; }
+  .timesup-text {
+    font-family: 'Boogaloo', cursive;
+    font-size: clamp(50px, 14vw, 90px);
+    color: var(--red);
+    text-align: center;
+    animation: pulse-big 0.6s ease infinite alternate;
+    text-shadow: 0 0 40px rgba(231,76,60,0.6);
+  }
+  @keyframes pulse-big { from { transform: scale(1); } to { transform: scale(1.06); } }
+
+  /* ── DIVIDER ── */
+  .divider { width: 100%; height: 1px; background: var(--border); }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 400px) {
+    .settings-grid { grid-template-columns: 1fr; }
+    .btn-success, .btn-danger { font-size: 17px; padding: 14px 16px; }
+  }
+
+  /* ── PULSE ANIM on timer warn ── */
+  @keyframes ring-pulse {
+    0%,100% { transform: scale(1); }
+    50% { transform: scale(1.06); }
+  }
+  .timer-ring.warning { animation: ring-pulse 0.7s ease infinite; }
+
+  /* ══ PLAYER SYSTEM ══ */
+  .player-input-row {
+    display: flex; gap: 10px; width: 100%;
+  }
+  .player-input-row input {
+    flex: 1; font-family: 'Inter', sans-serif; font-size: 16px;
+    background: var(--card); border: 2px solid var(--border); border-radius: 12px;
+    padding: 12px 16px; color: var(--white); outline: none; transition: border-color 0.15s;
+  }
+  .player-input-row input:focus { border-color: var(--purple); }
+  .player-input-row input::placeholder { color: var(--muted); }
+  .btn-add {
+    font-family: 'Boogaloo', cursive; font-size: 22px; background: var(--purple);
+    color: #fff; border: none; border-radius: 12px; padding: 12px 20px; cursor: pointer;
+    box-shadow: 0 3px 0 #4a1870; transition: transform 0.1s; flex-shrink: 0;
+  }
+  .btn-add:hover { transform: translateY(-1px); }
+  .btn-add:active { transform: scale(0.95); }
+
+  .player-list {
+    display: flex; flex-direction: column; gap: 8px;
+    width: 100%; max-height: 280px; overflow-y: auto;
+  }
+  .player-list::-webkit-scrollbar { width: 4px; }
+  .player-list::-webkit-scrollbar-thumb { background: var(--purple); border-radius: 4px; }
+
+  .player-item {
+    display: flex; align-items: center; gap: 12px;
+    background: var(--card); border: 2px solid var(--border); border-radius: 12px;
+    padding: 10px 14px; animation: slide-in 0.2s ease;
+  }
+  @keyframes slide-in { from { opacity:0; transform: translateY(-6px); } to { opacity:1; transform: translateY(0); } }
+  .player-avatar { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
+  .player-name-text { flex: 1; font-weight: 600; font-size: 15px; }
+  .player-order { font-size: 11px; color: var(--muted); }
+  .btn-remove { background: none; border: none; color: var(--muted); font-size: 18px; cursor: pointer; padding: 4px; border-radius: 6px; transition: color 0.1s, background 0.1s; }
+  .btn-remove:hover { color: var(--red); background: rgba(231,76,60,0.1); }
+
+  .current-player-banner {
+    width: 100%; background: linear-gradient(135deg, rgba(123,47,190,0.25), rgba(123,47,190,0.08));
+    border: 2px solid var(--purple); border-radius: 16px; padding: 12px 18px;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .cpb-avatar { font-size: 28px; }
+  .cpb-info { flex: 1; }
+  .cpb-label { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--purple-light); }
+  .cpb-name { font-family: 'Boogaloo', cursive; font-size: 22px; color: var(--white); }
+  .cpb-pts { font-family: 'Boogaloo', cursive; font-size: 22px; color: var(--yellow); }
+  .cpb-pts-label { font-size: 10px; color: var(--muted); text-align: right; }
+
+  .turn-hero { background: var(--card); border: 2px solid var(--border); border-radius: 24px; padding: 32px 24px; text-align: center; width: 100%; }
+  .turn-hero-avatar { font-size: 64px; line-height: 1; margin-bottom: 12px; }
+  .turn-hero-name { font-family: 'Boogaloo', cursive; font-size: 36px; color: var(--white); }
+  .turn-hero-sub { color: var(--muted); font-size: 14px; margin-top: 4px; }
+
+  .scoreboard { width: 100%; display: flex; flex-direction: column; gap: 8px; }
+  .sb-row {
+    display: flex; align-items: center; gap: 12px; background: var(--card);
+    border: 2px solid var(--border); border-radius: 14px; padding: 10px 14px;
+    position: relative; overflow: hidden; transition: border-color 0.3s;
+  }
+  .sb-row.sb-leader { border-color: var(--yellow); background: rgba(255,214,0,0.04); }
+  .sb-row.sb-active { border-color: var(--purple); background: rgba(123,47,190,0.08); }
+  .sb-rank { font-family: 'Boogaloo', cursive; font-size: 20px; color: var(--muted); width: 28px; text-align: center; flex-shrink: 0; }
+  .sb-rank.gold { color: var(--yellow); }
+  .sb-rank.silver { color: #bbb; }
+  .sb-rank.bronze { color: #cd7f32; }
+  .sb-avatar { font-size: 22px; flex-shrink: 0; }
+  .sb-name { flex: 1; font-weight: 600; font-size: 15px; }
+  .sb-detail { font-size: 12px; color: var(--muted); }
+  .sb-pts { font-family: 'Boogaloo', cursive; font-size: 24px; color: var(--yellow); }
+  .sb-bar { position: absolute; bottom: 0; left: 0; height: 3px; background: var(--purple); border-radius: 0 3px 0 0; transition: width 0.6s ease; }
+  .sb-leader .sb-bar { background: var(--yellow); }
+
+  .round-badge { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); }
+  .round-badge strong { color: var(--white); font-family: 'Boogaloo', cursive; font-size: 18px; }
+
+  .podium { display: flex; align-items: flex-end; justify-content: center; gap: 8px; width: 100%; margin: 8px 0; }
+  .podium-block { display: flex; flex-direction: column; align-items: center; gap: 6px; flex: 1; max-width: 130px; }
+  .podium-avatar { font-size: 32px; }
+  .podium-name { font-family: 'Boogaloo', cursive; font-size: 15px; text-align: center; line-height: 1.2; }
+  .podium-pts { font-family: 'Boogaloo', cursive; font-size: 20px; color: var(--yellow); }
+  .podium-stand { width: 100%; border-radius: 8px 8px 0 0; display: flex; align-items: center; justify-content: center; font-family: 'Boogaloo', cursive; font-size: 26px; color: rgba(0,0,0,0.45); }
+  .podium-block:nth-child(1) .podium-stand { background: #aaa; height: 60px; }
+  .podium-block:nth-child(2) .podium-stand { background: var(--yellow); height: 90px; }
+  .podium-block:nth-child(3) .podium-stand { background: #cd7f32; height: 45px; }
+
+  .hint-text { font-size: 13px; color: var(--muted); text-align: center; }
+  #confetti-canvas { position: fixed; inset: 0; pointer-events: none; z-index: 200; }
+</style>
+</head>
+<body>
+
+<!-- ══════════ SCREEN: HOME ══════════ -->
+<div class="screen active" id="screen-home">
+  <div class="logo">TIME<span>'S</span> UP!</div>
+  <div class="tagline">Le jeu du mime &amp; de la devinette</div>
+
+  <div class="divider"></div>
+
+  <div class="section-label">Durée du tour</div>
+  <div class="settings-grid" id="timer-options">
+    <div class="setting-card" data-val="30"><div class="sc-label">secondes</div><div class="sc-value">30</div></div>
+    <div class="setting-card selected" data-val="60"><div class="sc-label">secondes</div><div class="sc-value">60</div></div>
+    <div class="setting-card" data-val="90"><div class="sc-label">secondes</div><div class="sc-value">90</div></div>
+    <div class="setting-card" data-val="120"><div class="sc-label">secondes</div><div class="sc-value">120</div></div>
+  </div>
+
+  <div class="section-label">Passes autorisés</div>
+  <div class="settings-grid" id="pass-options">
+    <div class="setting-card" data-val="0"><div class="sc-label">passes</div><div class="sc-value">0</div></div>
+    <div class="setting-card selected" data-val="3"><div class="sc-label">passes</div><div class="sc-value">3</div></div>
+    <div class="setting-card" data-val="5"><div class="sc-label">passes</div><div class="sc-value">5</div></div>
+    <div class="setting-card" data-val="99"><div class="sc-label">passes</div><div class="sc-value">∞</div></div>
+  </div>
+
+  <div class="section-label">Catégories</div>
+  <div class="cat-grid" id="cat-toggles"></div>
+
+  <button class="btn btn-primary" onclick="goToPlayers()">▶ JOUEURS</button>
+  <button class="btn btn-ghost" onclick="showRules()">📖 Règles</button>
+</div>
+
+<!-- ══════════ SCREEN: PLAYERS SETUP ══════════ -->
+<div class="screen" id="screen-players">
+  <div class="logo" style="font-size:40px">Joueurs</div>
+  <div class="hint-text">Ajoute de 2 à 10 joueurs pour commencer</div>
+
+  <div class="player-input-row">
+    <input type="text" id="player-name-input" placeholder="Nom du joueur…" maxlength="20"
+      onkeydown="if(event.key==='Enter') addPlayer()">
+    <button class="btn-add" onclick="addPlayer()">+</button>
+  </div>
+
+  <div class="player-list" id="player-list"></div>
+
+  <div id="player-count-info" class="hint-text" style="display:none"></div>
+
+  <button class="btn btn-primary" id="start-game-btn" onclick="startGameWithPlayers()" style="display:none">
+    ▶ C'EST PARTI !
+  </button>
+  <button class="btn btn-ghost" onclick="showScreen('screen-home')">← Retour</button>
+</div>
+
+<!-- ══════════ SCREEN: BETWEEN TURNS ══════════ -->
+<div class="screen" id="screen-between">
+  <div class="round-badge">
+    <span>Tour</span><strong id="turn-round-display">1</strong>
+    <span>·</span>
+    <span id="turn-of-display"></span>
+  </div>
+
+  <div class="turn-hero">
+    <div class="turn-hero-avatar" id="turn-avatar">🎭</div>
+    <div class="turn-hero-name" id="turn-name">Joueur</div>
+    <div class="turn-hero-sub">C'est ton tour de mimer !</div>
+  </div>
+
+  <div class="section-label">Classement actuel</div>
+  <div class="scoreboard" id="between-scoreboard"></div>
+
+  <button class="btn btn-primary" onclick="startCurrentTurn()">🎲 Lancer mon tour</button>
+  <button class="btn btn-ghost" onclick="showFinalScoreboard()">🏁 Fin de partie</button>
+</div>
+
+<!-- ══════════ SCREEN: RULES ══════════ -->
+<div class="screen" id="screen-rules">
+  <div class="logo" style="font-size:40px">Règles</div>
+  <div style="background:var(--card);border-radius:20px;padding:24px;line-height:1.8;font-size:15px;color:var(--white);border:2px solid var(--border)">
+    <p><strong style="color:var(--yellow)">🎯 But du jeu</strong><br>Faire deviner le maximum de mots à votre équipe avant la fin du temps.</p><br>
+    <p><strong style="color:var(--yellow)">🃏 Déroulement</strong><br>1. Le joueur actif appuie sur <em>Révéler</em> pour voir le mot.<br>2. Le timer démarre automatiquement.<br>3. Mimez, décrivez, chantez... sans dire le mot !</br>4. Cliquez <strong>✓ Trouvé</strong> ou <strong>✗ Passer</strong>.</p><br>
+    <p><strong style="color:var(--yellow)">⭐ Points</strong><br>
+    ★☆☆ Facile = 1 point<br>
+    ★★☆ Moyen = 2 points<br>
+    ★★★ Difficile = 3 points</p><br>
+    <p><strong style="color:var(--yellow)">🚫 Interdits</strong><br>Dire le mot, les racines du mot ou l'épeler.</p>
+  </div>
+  <button class="btn btn-primary" onclick="showScreen('screen-home')">← Retour</button>
+</div>
+
+<!-- ══════════ SCREEN: GAME ══════════ -->
+<div class="screen" id="screen-game">
+  <div class="current-player-banner" id="current-player-banner">
+    <div class="cpb-avatar" id="cpb-avatar">🎭</div>
+    <div class="cpb-info">
+      <div class="cpb-label">En train de jouer</div>
+      <div class="cpb-name" id="cpb-name">Joueur</div>
+    </div>
+    <div style="text-align:right">
+      <div class="cpb-pts" id="cpb-pts">0</div>
+      <div class="cpb-pts-label">pts ce tour</div>
+    </div>
+  </div>
+
+  <div style="display:flex;justify-content:space-between;align-items:center;width:100%">
+    <div class="timer-ring" id="timer-ring">
+      <svg width="120" height="120" viewBox="0 0 120 120">
+        <circle class="bg-ring" cx="60" cy="60" r="52"/>
+        <circle class="progress-ring" id="progress-circle" cx="60" cy="60" r="52"
+          stroke-dasharray="326.7" stroke-dashoffset="0"/>
+      </svg>
+      <div class="timer-number" id="timer-display">60</div>
+    </div>
+    <div class="scores-row">
+      <div class="score-chip green"><div class="sc" id="score-ok">0</div><div class="sl">Trouvés</div></div>
+      <div class="score-chip red"><div class="sc" id="score-skip">0</div><div class="sl">Passés</div></div>
+      <div class="score-chip yellow"><div class="sc" id="score-pts">0</div><div class="sl">Points</div></div>
+    </div>
+  </div>
+
+  <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+  <div class="passes-left" id="passes-display"></div>
+
+  <div class="word-reveal-wrap">
+    <div class="word-card" id="word-card">
+      <div class="word-hidden" id="word-hidden">👀 Appuie pour révéler</div>
+      <div class="word-text" id="word-text"></div>
+      <div class="word-category" id="word-category"></div>
+      <div class="difficulty-badge" id="difficulty-badge"></div>
+      <button class="reveal-btn" id="reveal-btn" onclick="revealWord()">🎲 Révéler le mot</button>
+    </div>
+  </div>
+
+  <div class="action-row" id="action-row">
+    <button class="btn btn-success" onclick="wordFound()">✓ Trouvé !</button>
+    <button class="btn btn-danger" onclick="wordPass()">✗ Passer</button>
+  </div>
+
+  <button class="btn btn-ghost" onclick="endTurn()">⏹ Terminer mon tour</button>
+</div>
+
+<!-- ══════════ SCREEN: TURN RESULTS ══════════ -->
+<div class="screen" id="screen-turn-end">
+  <div class="logo" style="font-size:32px;color:var(--white)">Fin du tour</div>
+  <div style="display:flex;gap:16px;justify-content:center;flex-wrap:wrap">
+    <div style="text-align:center">
+      <div id="te-pts" style="font-family:'Boogaloo',cursive;font-size:54px;color:var(--yellow);line-height:1">0</div>
+      <div style="font-size:11px;color:var(--muted);letter-spacing:2px">POINTS</div>
+    </div>
+    <div style="text-align:center">
+      <div id="te-ok" style="font-family:'Boogaloo',cursive;font-size:54px;color:var(--green);line-height:1">0</div>
+      <div style="font-size:11px;color:var(--muted);letter-spacing:2px">TROUVÉS</div>
+    </div>
+    <div style="text-align:center">
+      <div id="te-skip" style="font-family:'Boogaloo',cursive;font-size:54px;color:var(--red);line-height:1">0</div>
+      <div style="font-size:11px;color:var(--muted);letter-spacing:2px">PASSÉS</div>
+    </div>
+  </div>
+  <div class="divider"></div>
+  <div class="section-label">Mots de ce tour</div>
+  <div class="results-list" id="turn-results-list"></div>
+  <div class="divider"></div>
+  <div class="section-label">Classement</div>
+  <div class="scoreboard" id="turn-end-scoreboard"></div>
+  <button class="btn btn-primary" id="next-turn-btn" onclick="nextTurn()">➡ Tour suivant</button>
+  <button class="btn btn-ghost" onclick="showFinalScoreboard()">🏁 Fin de partie</button>
+</div>
+
+<!-- ══════════ SCREEN: FINAL SCOREBOARD ══════════ -->
+<div class="screen" id="screen-end">
+  <canvas id="confetti-canvas"></canvas>
+  <div class="logo" style="font-size:36px">🏆 Résultats</div>
+  <div id="podium-wrap"></div>
+  <div class="divider"></div>
+  <div class="section-label">Classement complet</div>
+  <div class="scoreboard" id="final-scoreboard"></div>
+  <button class="btn btn-primary" onclick="goToPlayers()">🔄 Nouvelle partie</button>
+  <button class="btn btn-ghost" onclick="showScreen('screen-home')">← Menu</button>
+</div>
+
+<!-- ══════════ TIMESUP OVERLAY ══════════ -->
+<div class="timesup-overlay" id="global-timesup">
+  <div class="timesup-text">⏰<br>TIME'S UP !</div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════
+//  PLAYER AVATARS & COLORS
+// ══════════════════════════════════════════════════════
+const AVATARS = ['🎭','🦊','🐼','🦁','🐸','🦄','🐯','🐙','🦋','🐳','🦅','🌈'];
+const PLAYER_COLORS = ['#7B2FBE','#2ECC71','#E74C3C','#F39C12','#3498DB','#E91E8C','#00BCD4','#8BC34A','#FF6B35','#A8E063'];
+
+// ══════════════════════════════════════════════════════
+//  STATE
+// ══════════════════════════════════════════════════════
+let players = [];           // [{name, avatar, color, totalPts, totalOk, turns}]
+let currentPlayerIdx = 0;
+let globalRound = 1;        // increments every full lap
+let gameWords = [];
+let currentIndex = 0;
+let timerValue = 60;
+let timerInterval = null;
+let timerStarted = false;
+let scoreOk = 0;
+let scoreSkip = 0;
+let scorePoints = 0;
+let passesLeft = 3;
+let sessionResults = [];    // current turn results
+const CIRC = 2 * Math.PI * 52;
+
+// Settings
+let selectedCategories;
+let timerDuration = 60;
+let maxPasses = 3;
+
+// ══════════════════════════════════════════════════════
+//  WORD DATABASE — 1000+ words
+// ══════════════════════════════════════════════════════
+const WORDS = [
+  // ── ANIMAUX ── (1=facile,2=moyen,3=difficile)
+  {w:"Chat",c:"Animaux",d:1},{w:"Chien",c:"Animaux",d:1},{w:"Éléphant",c:"Animaux",d:1},
+  {w:"Lion",c:"Animaux",d:1},{w:"Tigre",c:"Animaux",d:1},{w:"Girafe",c:"Animaux",d:1},
+  {w:"Singe",c:"Animaux",d:1},{w:"Cheval",c:"Animaux",d:1},{w:"Vache",c:"Animaux",d:1},
+  {w:"Mouton",c:"Animaux",d:1},{w:"Cochon",c:"Animaux",d:1},{w:"Poule",c:"Animaux",d:1},
+  {w:"Coq",c:"Animaux",d:1},{w:"Canard",c:"Animaux",d:1},{w:"Lapin",c:"Animaux",d:1},
+  {w:"Renard",c:"Animaux",d:1},{w:"Loup",c:"Animaux",d:1},{w:"Ours",c:"Animaux",d:1},
+  {w:"Dauphin",c:"Animaux",d:1},{w:"Baleine",c:"Animaux",d:1},{w:"Requin",c:"Animaux",d:1},
+  {w:"Pieuvre",c:"Animaux",d:2},{w:"Crocodile",c:"Animaux",d:1},{w:"Serpent",c:"Animaux",d:1},
+  {w:"Tortue",c:"Animaux",d:1},{w:"Grenouille",c:"Animaux",d:1},{w:"Perroquet",c:"Animaux",d:1},
+  {w:"Aigle",c:"Animaux",d:1},{w:"Hibou",c:"Animaux",d:1},{w:"Pingouin",c:"Animaux",d:1},
+  {w:"Flamant rose",c:"Animaux",d:2},{w:"Chameau",c:"Animaux",d:1},{w:"Zèbre",c:"Animaux",d:1},
+  {w:"Hippopotame",c:"Animaux",d:1},{w:"Rhinocéros",c:"Animaux",d:1},{w:"Guépard",c:"Animaux",d:2},
+  {w:"Jaguar",c:"Animaux",d:2},{w:"Panthère",c:"Animaux",d:2},{w:"Panda",c:"Animaux",d:1},
+  {w:"Koala",c:"Animaux",d:1},{w:"Kangourou",c:"Animaux",d:1},{w:"Orque",c:"Animaux",d:2},
+  {w:"Méduse",c:"Animaux",d:2},{w:"Homard",c:"Animaux",d:2},{w:"Crabe",c:"Animaux",d:1},
+  {w:"Escargot",c:"Animaux",d:1},{w:"Papillon",c:"Animaux",d:1},{w:"Abeille",c:"Animaux",d:1},
+  {w:"Araignée",c:"Animaux",d:1},{w:"Fourmi",c:"Animaux",d:1},{w:"Moustique",c:"Animaux",d:1},
+  {w:"Coccinelle",c:"Animaux",d:1},{w:"Lézard",c:"Animaux",d:1},{w:"Chauve-souris",c:"Animaux",d:2},
+  {w:"Hérisson",c:"Animaux",d:1},{w:"Écureuil",c:"Animaux",d:1},{w:"Castor",c:"Animaux",d:2},
+  {w:"Morse",c:"Animaux",d:2},{w:"Belette",c:"Animaux",d:2},{w:"Blaireau",c:"Animaux",d:2},
+  {w:"Lama",c:"Animaux",d:1},{w:"Alpaga",c:"Animaux",d:2},{w:"Bison",c:"Animaux",d:2},
+  {w:"Phoque",c:"Animaux",d:1},{w:"Otarie",c:"Animaux",d:2},{w:"Pélican",c:"Animaux",d:2},
+  {w:"Cigogne",c:"Animaux",d:2},{w:"Toucan",c:"Animaux",d:2},{w:"Autruche",c:"Animaux",d:1},
+  {w:"Émeu",c:"Animaux",d:2},{w:"Paon",c:"Animaux",d:2},{w:"Dromadaire",c:"Animaux",d:2},
+  {w:"Élan",c:"Animaux",d:2},{w:"Cerf",c:"Animaux",d:1},{w:"Sanglier",c:"Animaux",d:2},
+  {w:"Lynx",c:"Animaux",d:2},{w:"Puma",c:"Animaux",d:2},{w:"Wombat",c:"Animaux",d:3},
+  {w:"Tapir",c:"Animaux",d:3},{w:"Okapi",c:"Animaux",d:3},{w:"Axolotl",c:"Animaux",d:3},
+  {w:"Narval",c:"Animaux",d:3},{w:"Dugong",c:"Animaux",d:3},{w:"Caracal",c:"Animaux",d:3},
+
+  // ── MÉTIERS ──
+  {w:"Pompier",c:"Métiers",d:1},{w:"Médecin",c:"Métiers",d:1},{w:"Chirurgien",c:"Métiers",d:1},
+  {w:"Dentiste",c:"Métiers",d:1},{w:"Infirmier",c:"Métiers",d:1},{w:"Vétérinaire",c:"Métiers",d:1},
+  {w:"Professeur",c:"Métiers",d:1},{w:"Boulanger",c:"Métiers",d:1},{w:"Cuisinier",c:"Métiers",d:1},
+  {w:"Chef étoilé",c:"Métiers",d:2},{w:"Pilote",c:"Métiers",d:1},{w:"Astronaute",c:"Métiers",d:1},
+  {w:"Policier",c:"Métiers",d:1},{w:"Avocat",c:"Métiers",d:1},{w:"Juge",c:"Métiers",d:1},
+  {w:"Architecte",c:"Métiers",d:1},{w:"Plombier",c:"Métiers",d:1},{w:"Électricien",c:"Métiers",d:1},
+  {w:"Mécanicien",c:"Métiers",d:1},{w:"Chauffeur de taxi",c:"Métiers",d:1},
+  {w:"Photographe",c:"Métiers",d:1},{w:"Journaliste",c:"Métiers",d:1},{w:"Acteur",c:"Métiers",d:1},
+  {w:"Chanteur",c:"Métiers",d:1},{w:"Danseur",c:"Métiers",d:1},{w:"Peintre",c:"Métiers",d:1},
+  {w:"Sculpteur",c:"Métiers",d:2},{w:"Écrivain",c:"Métiers",d:1},{w:"Libraire",c:"Métiers",d:2},
+  {w:"Bibliothécaire",c:"Métiers",d:2},{w:"Pharmacien",c:"Métiers",d:1},{w:"Biologiste",c:"Métiers",d:2},
+  {w:"Géologue",c:"Métiers",d:2},{w:"Archéologue",c:"Métiers",d:2},{w:"Anthropologue",c:"Métiers",d:3},
+  {w:"Kinésithérapeute",c:"Métiers",d:2},{w:"Ostéopathe",c:"Métiers",d:2},{w:"Psychologue",c:"Métiers",d:2},
+  {w:"Psychiatre",c:"Métiers",d:2},{w:"Cardiologue",c:"Métiers",d:3},{w:"Ophtalmologue",c:"Métiers",d:3},
+  {w:"Sommelier",c:"Métiers",d:3},{w:"Couturier",c:"Métiers",d:2},{w:"Styliste",c:"Métiers",d:2},
+  {w:"Forgeron",c:"Métiers",d:2},{w:"Serrurier",c:"Métiers",d:2},{w:"Vitrier",c:"Métiers",d:2},
+  {w:"Horloger",c:"Métiers",d:3},{w:"Luthier",c:"Métiers",d:3},{w:"Tonnelier",c:"Métiers",d:3},
+  {w:"Notaire",c:"Métiers",d:2},{w:"Huissier",c:"Métiers",d:3},{w:"Amiral",c:"Métiers",d:2},
+  {w:"Général",c:"Métiers",d:2},{w:"Sénateur",c:"Métiers",d:2},{w:"Diplomate",c:"Métiers",d:2},
+  {w:"Ambassadeur",c:"Métiers",d:2},{w:"Garde du corps",c:"Métiers",d:2},{w:"Détective",c:"Métiers",d:2},
+
+  // ── OBJETS DU QUOTIDIEN ──
+  {w:"Téléphone",c:"Objets",d:1},{w:"Ordinateur",c:"Objets",d:1},{w:"Télévision",c:"Objets",d:1},
+  {w:"Réfrigérateur",c:"Objets",d:1},{w:"Micro-ondes",c:"Objets",d:1},{w:"Machine à laver",c:"Objets",d:1},
+  {w:"Aspirateur",c:"Objets",d:1},{w:"Fer à repasser",c:"Objets",d:1},{w:"Brosse à dents",c:"Objets",d:1},
+  {w:"Rasoir",c:"Objets",d:1},{w:"Peigne",c:"Objets",d:1},{w:"Miroir",c:"Objets",d:1},
+  {w:"Lunettes",c:"Objets",d:1},{w:"Parapluie",c:"Objets",d:1},{w:"Valise",c:"Objets",d:1},
+  {w:"Clé",c:"Objets",d:1},{w:"Cadenas",c:"Objets",d:1},{w:"Boussole",c:"Objets",d:1},
+  {w:"Lampe de poche",c:"Objets",d:1},{w:"Bougie",c:"Objets",d:1},{w:"Allumette",c:"Objets",d:1},
+  {w:"Briquet",c:"Objets",d:1},{w:"Ciseaux",c:"Objets",d:1},{w:"Agrafeuse",c:"Objets",d:1},
+  {w:"Calculatrice",c:"Objets",d:1},{w:"Réveil",c:"Objets",d:1},{w:"Montre",c:"Objets",d:1},
+  {w:"Portefeuille",c:"Objets",d:1},{w:"Sac à main",c:"Objets",d:1},{w:"Ceinture",c:"Objets",d:1},
+  {w:"Marteau",c:"Objets",d:1},{w:"Tournevis",c:"Objets",d:1},{w:"Scie",c:"Objets",d:1},
+  {w:"Perceuse",c:"Objets",d:1},{w:"Niveau à bulle",c:"Objets",d:2},{w:"Pince",c:"Objets",d:1},
+  {w:"Truelle",c:"Objets",d:2},{w:"Entonnoir",c:"Objets",d:2},{w:"Passoire",c:"Objets",d:1},
+  {w:"Fouet",c:"Objets",d:1},{w:"Rouleau à pâtisserie",c:"Objets",d:1},{w:"Tire-bouchon",c:"Objets",d:2},
+  {w:"Décapsuleur",c:"Objets",d:2},{w:"Thermos",c:"Objets",d:1},{w:"Cafetière",c:"Objets",d:1},
+  {w:"Grille-pain",c:"Objets",d:1},{w:"Ventilateur",c:"Objets",d:1},{w:"Climatiseur",c:"Objets",d:2},
+  {w:"Baignoire",c:"Objets",d:1},{w:"Douche",c:"Objets",d:1},{w:"Robinet",c:"Objets",d:1},
+  {w:"Tuyau d'arrosage",c:"Objets",d:1},{w:"Brouette",c:"Objets",d:1},{w:"Arrosoir",c:"Objets",d:1},
+  {w:"Tondeuse à gazon",c:"Objets",d:1},{w:"Râteau",c:"Objets",d:1},{w:"Pelle",c:"Objets",d:1},
+  {w:"Sablier",c:"Objets",d:2},{w:"Stéthoscope",c:"Objets",d:2},{w:"Thermomètre",c:"Objets",d:1},
+  {w:"Télescope",c:"Objets",d:2},{w:"Microscope",c:"Objets",d:2},{w:"Jumelles",c:"Objets",d:2},
+  {w:"Accordéon",c:"Objets",d:2},{w:"Trampoline",c:"Objets",d:1},{w:"Haltère",c:"Objets",d:1},
+
+  // ── NOURRITURE ──
+  {w:"Pizza",c:"Nourriture",d:1},{w:"Hamburger",c:"Nourriture",d:1},{w:"Sushi",c:"Nourriture",d:1},
+  {w:"Croissant",c:"Nourriture",d:1},{w:"Baguette",c:"Nourriture",d:1},{w:"Camembert",c:"Nourriture",d:1},
+  {w:"Fondue",c:"Nourriture",d:1},{w:"Raclette",c:"Nourriture",d:1},{w:"Crêpe",c:"Nourriture",d:1},
+  {w:"Gaufre",c:"Nourriture",d:1},{w:"Éclair au chocolat",c:"Nourriture",d:1},{w:"Macarons",c:"Nourriture",d:1},
+  {w:"Crème brûlée",c:"Nourriture",d:1},{w:"Tarte Tatin",c:"Nourriture",d:2},{w:"Kouign-amann",c:"Nourriture",d:3},
+  {w:"Chocolat chaud",c:"Nourriture",d:1},{w:"Limonade",c:"Nourriture",d:1},{w:"Milkshake",c:"Nourriture",d:1},
+  {w:"Smoothie",c:"Nourriture",d:1},{w:"Mojito",c:"Nourriture",d:2},{w:"Soupe à l'oignon",c:"Nourriture",d:2},
+  {w:"Ratatouille",c:"Nourriture",d:2},{w:"Bouillabaisse",c:"Nourriture",d:3},{w:"Cassoulet",c:"Nourriture",d:3},
+  {w:"Coq au vin",c:"Nourriture",d:2},{w:"Bœuf bourguignon",c:"Nourriture",d:2},{w:"Paella",c:"Nourriture",d:2},
+  {w:"Risotto",c:"Nourriture",d:2},{w:"Lasagnes",c:"Nourriture",d:1},{w:"Tacos",c:"Nourriture",d:1},
+  {w:"Nachos",c:"Nourriture",d:1},{w:"Guacamole",c:"Nourriture",d:2},{w:"Houmous",c:"Nourriture",d:2},
+  {w:"Kebab",c:"Nourriture",d:1},{w:"Shawarma",c:"Nourriture",d:2},{w:"Ramen",c:"Nourriture",d:2},
+  {w:"Dim Sum",c:"Nourriture",d:2},{w:"Mochi",c:"Nourriture",d:2},{w:"Tempura",c:"Nourriture",d:2},
+  {w:"Naan",c:"Nourriture",d:2},{w:"Curry",c:"Nourriture",d:1},{w:"Tiramisu",c:"Nourriture",d:1},
+  {w:"Panna cotta",c:"Nourriture",d:2},{w:"Cannoli",c:"Nourriture",d:2},{w:"Brownie",c:"Nourriture",d:1},
+  {w:"Cheesecake",c:"Nourriture",d:1},{w:"Cupcake",c:"Nourriture",d:1},{w:"Madeleine",c:"Nourriture",d:1},
+  {w:"Fraise",c:"Nourriture",d:1},{w:"Banane",c:"Nourriture",d:1},{w:"Ananas",c:"Nourriture",d:1},
+  {w:"Pastèque",c:"Nourriture",d:1},{w:"Mangue",c:"Nourriture",d:1},{w:"Avocat",c:"Nourriture",d:1},
+  {w:"Aubergine",c:"Nourriture",d:1},{w:"Courgette",c:"Nourriture",d:1},{w:"Brocoli",c:"Nourriture",d:1},
+  {w:"Artichaut",c:"Nourriture",d:2},{w:"Endive",c:"Nourriture",d:2},{w:"Poireau",c:"Nourriture",d:2},
+  {w:"Châtaigne",c:"Nourriture",d:2},{w:"Truffe",c:"Nourriture",d:3},{w:"Foie gras",c:"Nourriture",d:2},
+  {w:"Huître",c:"Nourriture",d:2},{w:"Escargot",c:"Nourriture",d:2},{w:"Grenouille",c:"Nourriture",d:2},
+
+  // ── SPORTS ──
+  {w:"Football",c:"Sports",d:1},{w:"Tennis",c:"Sports",d:1},{w:"Basketball",c:"Sports",d:1},
+  {w:"Rugby",c:"Sports",d:1},{w:"Natation",c:"Sports",d:1},{w:"Cyclisme",c:"Sports",d:1},
+  {w:"Boxe",c:"Sports",d:1},{w:"Judo",c:"Sports",d:1},{w:"Karaté",c:"Sports",d:1},
+  {w:"Ski",c:"Sports",d:1},{w:"Snowboard",c:"Sports",d:1},{w:"Surf",c:"Sports",d:1},
+  {w:"Escalade",c:"Sports",d:1},{w:"Plongée",c:"Sports",d:1},{w:"Équitation",c:"Sports",d:1},
+  {w:"Tir à l'arc",c:"Sports",d:1},{w:"Escrime",c:"Sports",d:2},{w:"Haltérophilie",c:"Sports",d:2},
+  {w:"Lancer du disque",c:"Sports",d:2},{w:"Lancer du javelot",c:"Sports",d:2},
+  {w:"Saut en longueur",c:"Sports",d:1},{w:"Saut à la perche",c:"Sports",d:2},
+  {w:"Trampoline",c:"Sports",d:1},{w:"Gymnas­tique",c:"Sports",d:1},{w:"Patinage artistique",c:"Sports",d:2},
+  {w:"Hockey sur glace",c:"Sports",d:1},{w:"Volleyball",c:"Sports",d:1},{w:"Handball",c:"Sports",d:1},
+  {w:"Waterpolo",c:"Sports",d:2},{w:"Polo",c:"Sports",d:2},{w:"Golf",c:"Sports",d:1},
+  {w:"Base-ball",c:"Sports",d:1},{w:"Cricket",c:"Sports",d:2},{w:"Badminton",c:"Sports",d:1},
+  {w:"Ping-pong",c:"Sports",d:1},{w:"Pétanque",c:"Sports",d:1},{w:"Fléchettes",c:"Sports",d:1},
+  {w:"Billard",c:"Sports",d:1},{w:"Bowling",c:"Sports",d:1},{w:"Curling",c:"Sports",d:2},
+  {w:"Biathlon",c:"Sports",d:2},{w:"Triathlon",c:"Sports",d:2},{w:"Sumo",c:"Sports",d:2},
+  {w:"Lutte",c:"Sports",d:2},{w:"Taekwondo",c:"Sports",d:2},{w:"Aïkido",c:"Sports",d:3},
+  {w:"Kitesurf",c:"Sports",d:2},{w:"Parachutisme",c:"Sports",d:2},{w:"Deltaplane",c:"Sports",d:2},
+  {w:"Bobsleigh",c:"Sports",d:2},{w:"Luge",c:"Sports",d:2},{w:"Skeleton",c:"Sports",d:3},
+
+  // ── FILMS & SÉRIES ──
+  {w:"Titanic",c:"Films",d:1},{w:"Star Wars",c:"Films",d:1},{w:"Jurassic Park",c:"Films",d:1},
+  {w:"Le Roi Lion",c:"Films",d:1},{w:"Shrek",c:"Films",d:1},{w:"Toy Story",c:"Films",d:1},
+  {w:"Harry Potter",c:"Films",d:1},{w:"Le Seigneur des Anneaux",c:"Films",d:1},
+  {w:"Indiana Jones",c:"Films",d:1},{w:"James Bond",c:"Films",d:1},
+  {w:"La Guerre des étoiles",c:"Films",d:1},{w:"Avatar",c:"Films",d:1},
+  {w:"Les Avengers",c:"Films",d:1},{w:"Spider-Man",c:"Films",d:1},{w:"Batman",c:"Films",d:1},
+  {w:"Superman",c:"Films",d:1},{w:"Iron Man",c:"Films",d:1},{w:"Frozen",c:"Films",d:1},
+  {w:"La Belle et la Bête",c:"Films",d:1},{w:"Cendrillon",c:"Films",d:1},
+  {w:"Blanche-Neige",c:"Films",d:1},{w:"Pinocchio",c:"Films",d:1},{w:"Bambi",c:"Films",d:1},
+  {w:"Alien",c:"Films",d:1},{w:"Matrix",c:"Films",d:1},{w:"Inception",c:"Films",d:2},
+  {w:"Interstellar",c:"Films",d:2},{w:"Parasite",c:"Films",d:2},{w:"Joker",c:"Films",d:1},
+  {w:"Fight Club",c:"Films",d:2},{w:"Pulp Fiction",c:"Films",d:2},{w:"Forrest Gump",c:"Films",d:1},
+  {w:"Rocky",c:"Films",d:1},{w:"Gladiateur",c:"Films",d:1},{w:"Braveheart",c:"Films",d:2},
+  {w:"Le Parrain",c:"Films",d:2},{w:"Scarface",c:"Films",d:2},{w:"Grease",c:"Films",d:1},
+  {w:"Dirty Dancing",c:"Films",d:1},{w:"Mamma Mia",c:"Films",d:1},{w:"Fantômas",c:"Films",d:2},
+  {w:"Astérix",c:"Films",d:1},{w:"Tintin",c:"Films",d:1},{w:"Lucky Luke",c:"Films",d:1},
+  {w:"Les Minions",c:"Films",d:1},{w:"Moana",c:"Films",d:1},{w:"Mulan",c:"Films",d:1},
+  {w:"Aladdin",c:"Films",d:1},{w:"La Petite Sirène",c:"Films",d:1},{w:"Pirate des Caraïbes",c:"Films",d:1},
+
+  // ── LIEUX & PAYS ──
+  {w:"Tour Eiffel",c:"Lieux",d:1},{w:"Big Ben",c:"Lieux",d:1},{w:"Colisée",c:"Lieux",d:1},
+  {w:"Pyramides de Gizeh",c:"Lieux",d:1},{w:"Muraille de Chine",c:"Lieux",d:1},
+  {w:"Statue de la Liberté",c:"Lieux",d:1},{w:"Machu Picchu",c:"Lieux",d:2},
+  {w:"Angkor Wat",c:"Lieux",d:2},{w:"Taj Mahal",c:"Lieux",d:1},{w:"Alhambra",c:"Lieux",d:2},
+  {w:"Acropole",c:"Lieux",d:2},{w:"Stonehenge",c:"Lieux",d:2},{w:"Versailles",c:"Lieux",d:1},
+  {w:"Louvre",c:"Lieux",d:1},{w:"Vatican",c:"Lieux",d:1},{w:"Times Square",c:"Lieux",d:1},
+  {w:"Las Vegas",c:"Lieux",d:1},{w:"Hollywood",c:"Lieux",d:1},{w:"Sahara",c:"Lieux",d:1},
+  {w:"Amazonie",c:"Lieux",d:1},{w:"Himalaya",c:"Lieux",d:1},{w:"Mont Everest",c:"Lieux",d:1},
+  {w:"Niagara",c:"Lieux",d:1},{w:"Venise",c:"Lieux",d:1},{w:"Barcelone",c:"Lieux",d:1},
+  {w:"Tokyo",c:"Lieux",d:1},{w:"Dubaï",c:"Lieux",d:1},{w:"Sydney",c:"Lieux",d:1},
+  {w:"Rio de Janeiro",c:"Lieux",d:1},{w:"New York",c:"Lieux",d:1},{w:"Paris",c:"Lieux",d:1},
+  {w:"Moscou",c:"Lieux",d:1},{w:"Pékin",c:"Lieux",d:1},{w:"Mumbaï",c:"Lieux",d:2},
+  {w:"Le Caire",c:"Lieux",d:1},{w:"Johannesburg",c:"Lieux",d:2},{w:"Buenos Aires",c:"Lieux",d:2},
+  {w:"Mexico",c:"Lieux",d:1},{w:"Istanbul",c:"Lieux",d:2},{w:"Séoul",c:"Lieux",d:2},
+  {w:"Bangkok",c:"Lieux",d:2},{w:"Bali",c:"Lieux",d:1},{w:"Maldives",c:"Lieux",d:2},
+  {w:"Antarctique",c:"Lieux",d:2},{w:"Islande",c:"Lieux",d:2},{w:"Fjords",c:"Lieux",d:2},
+
+  // ── PERSONNAGES CÉLÈBRES ──
+  {w:"Napoléon",c:"Célébrités",d:1},{w:"Cléopâtre",c:"Célébrités",d:1},{w:"Mozart",c:"Célébrités",d:1},
+  {w:"Leonardo da Vinci",c:"Célébrités",d:1},{w:"Shakespeare",c:"Célébrités",d:1},
+  {w:"Albert Einstein",c:"Célébrités",d:1},{w:"Isaac Newton",c:"Célébrités",d:1},
+  {w:"Marie Curie",c:"Célébrités",d:1},{w:"Charles Darwin",c:"Célébrités",d:1},
+  {w:"Galilée",c:"Célébrités",d:1},{w:"Christophe Colomb",c:"Célébrités",d:1},
+  {w:"Marco Polo",c:"Célébrités",d:1},{w:"Jules Verne",c:"Célébrités",d:1},
+  {w:"Victor Hugo",c:"Célébrités",d:1},{w:"Molière",c:"Célébrités",d:1},
+  {w:"Voltaire",c:"Célébrités",d:2},{w:"Descartes",c:"Célébrités",d:2},
+  {w:"Freud",c:"Célébrités",d:2},{w:"Darwin",c:"Célébrités",d:1},{w:"Gandhi",c:"Célébrités",d:1},
+  {w:"Martin Luther King",c:"Célébrités",d:1},{w:"Nelson Mandela",c:"Célébrités",d:1},
+  {w:"Che Guevara",c:"Célébrités",d:2},{w:"Charlie Chaplin",c:"Célébrités",d:1},
+  {w:"Marilyn Monroe",c:"Célébrités",d:1},{w:"Elvis Presley",c:"Célébrités",d:1},
+  {w:"Michael Jackson",c:"Célébrités",d:1},{w:"Madonna",c:"Célébrités",d:1},
+  {w:"Beyoncé",c:"Célébrités",d:1},{w:"Lady Gaga",c:"Célébrités",d:1},
+  {w:"Ronaldo",c:"Célébrités",d:1},{w:"Messi",c:"Célébrités",d:1},{w:"Federer",c:"Célébrités",d:1},
+  {w:"Serena Williams",c:"Célébrités",d:1},{w:"Usain Bolt",c:"Célébrités",d:1},
+  {w:"Muhammad Ali",c:"Célébrités",d:1},{w:"Michael Jordan",c:"Célébrités",d:1},
+  {w:"Elon Musk",c:"Célébrités",d:1},{w:"Steve Jobs",c:"Célébrités",d:1},
+  {w:"Mark Zuckerberg",c:"Célébrités",d:1},{w:"Bill Gates",c:"Célébrités",d:1},
+  {w:"Jeff Bezos",c:"Célébrités",d:2},{w:"Picasso",c:"Célébrités",d:1},
+  {w:"Salvador Dalí",c:"Célébrités",d:1},{w:"Van Gogh",c:"Célébrités",d:1},
+  {w:"Michel-Ange",c:"Célébrités",d:1},{w:"Rembrandt",c:"Célébrités",d:2},
+
+  // ── ACTIONS & SITUATIONS ──
+  {w:"Dormir",c:"Actions",d:1},{w:"Manger",c:"Actions",d:1},{w:"Courir",c:"Actions",d:1},
+  {w:"Nager",c:"Actions",d:1},{w:"Voler",c:"Actions",d:1},{w:"Plonger",c:"Actions",d:1},
+  {w:"Escalader",c:"Actions",d:1},{w:"Tomber",c:"Actions",d:1},{w:"Danser",c:"Actions",d:1},
+  {w:"Chanter",c:"Actions",d:1},{w:"Pleurer",c:"Actions",d:1},{w:"Rire",c:"Actions",d:1},
+  {w:"Se battre",c:"Actions",d:1},{w:"Embrasser",c:"Actions",d:1},{w:"Conduire",c:"Actions",d:1},
+  {w:"Cuisiner",c:"Actions",d:1},{w:"Peindre",c:"Actions",d:1},{w:"Écrire",c:"Actions",d:1},
+  {w:"Lire",c:"Actions",d:1},{w:"Téléphoner",c:"Actions",d:1},{w:"Prendre en photo",c:"Actions",d:1},
+  {w:"Se déguiser",c:"Actions",d:1},{w:"Méditer",c:"Actions",d:1},{w:"Faire du yoga",c:"Actions",d:1},
+  {w:"Faire du vélo",c:"Actions",d:1},{w:"Jardiner",c:"Actions",d:1},{w:"Pêcher",c:"Actions",d:1},
+  {w:"Tricoter",c:"Actions",d:2},{w:"Coudre",c:"Actions",d:2},{w:"Bricoler",c:"Actions",d:1},
+  {w:"Jouer aux cartes",c:"Actions",d:1},{w:"Faire du shopping",c:"Actions",d:1},
+  {w:"Faire la queue",c:"Actions",d:1},{w:"Rater son bus",c:"Actions",d:1},
+  {w:"Être coincé dans les bouchons",c:"Actions",d:2},{w:"Perdre ses clés",c:"Actions",d:2},
+  {w:"Faire semblant de dormir",c:"Actions",d:2},{w:"Chuchoter",c:"Actions",d:1},
+  {w:"Ronfler",c:"Actions",d:1},{w:"Éternuer",c:"Actions",d:1},{w:"Bâiller",c:"Actions",d:1},
+  {w:"Trébucher",c:"Actions",d:1},{w:"Glisser",c:"Actions",d:1},{w:"Sauter à pieds joints",c:"Actions",d:1},
+  {w:"Faire des grimaces",c:"Actions",d:1},{w:"Souffler des bougies",c:"Actions",d:1},
+  {w:"Jongler",c:"Actions",d:2},{w:"Faire le poirier",c:"Actions",d:2},
+  {w:"Avaler de travers",c:"Actions",d:2},{w:"Se perdre",c:"Actions",d:1},
+
+  // ── NATURE & ENVIRONNEMENT ──
+  {w:"Arc-en-ciel",c:"Nature",d:1},{w:"Tornade",c:"Nature",d:1},{w:"Tsunami",c:"Nature",d:1},
+  {w:"Tremblement de terre",c:"Nature",d:1},{w:"Éruption volcanique",c:"Nature",d:1},
+  {w:"Avalanche",c:"Nature",d:1},{w:"Aurore boréale",c:"Nature",d:2},{w:"Éclipse",c:"Nature",d:1},
+  {w:"Météorite",c:"Nature",d:2},{w:"Comète",c:"Nature",d:2},{w:"Tempête de neige",c:"Nature",d:1},
+  {w:"Marée haute",c:"Nature",d:2},{w:"Mirage",c:"Nature",d:2},{w:"Désert",c:"Nature",d:1},
+  {w:"Jungle",c:"Nature",d:1},{w:"Mangrove",c:"Nature",d:3},{w:"Toundra",c:"Nature",d:3},
+  {w:"Stalagmite",c:"Nature",d:3},{w:"Geyser",c:"Nature",d:2},{w:"Récif corallien",c:"Nature",d:2},
+  {w:"Marais",c:"Nature",d:2},{w:"Delta",c:"Nature",d:3},{w:"Fjord",c:"Nature",d:2},
+  {w:"Iceberg",c:"Nature",d:1},{w:"Banquise",c:"Nature",d:2},{w:"Oasis",c:"Nature",d:2},
+  {w:"Dune",c:"Nature",d:1},{w:"Falaise",c:"Nature",d:1},{w:"Grotte",c:"Nature",d:1},
+  {w:"Cascade",c:"Nature",d:1},{w:"Torrent",c:"Nature",d:2},{w:"Lagune",c:"Nature",d:2},
+  {w:"Île volcanique",c:"Nature",d:2},{w:"Typhon",c:"Nature",d:2},{w:"Cyclone",c:"Nature",d:2},
+  {w:"Ouragan",c:"Nature",d:2},{w:"Brouillard",c:"Nature",d:1},{w:"Grêle",c:"Nature",d:1},
+  {w:"Verglas",c:"Nature",d:1},{w:"Rosée",c:"Nature",d:2},{w:"Givre",c:"Nature",d:2},
+
+  // ── MUSIQUE ──
+  {w:"Guitare",c:"Musique",d:1},{w:"Piano",c:"Musique",d:1},{w:"Violon",c:"Musique",d:1},
+  {w:"Trompette",c:"Musique",d:1},{w:"Saxo­phone",c:"Musique",d:1},{w:"Batterie",c:"Musique",d:1},
+  {w:"Basse",c:"Musique",d:1},{w:"Flûte",c:"Musique",d:1},{w:"Harpe",c:"Musique",d:1},
+  {w:"Tuba",c:"Musique",d:2},{w:"Accordéon",c:"Musique",d:1},{w:"Tambour",c:"Musique",d:1},
+  {w:"Contrebasse",c:"Musique",d:2},{w:"Basson",c:"Musique",d:3},{w:"Hautbois",c:"Musique",d:3},
+  {w:"Cor",c:"Musique",d:2},{w:"Trombone",c:"Musique",d:2},{w:"Xylophone",c:"Musique",d:2},
+  {w:"Marimba",c:"Musique",d:3},{w:"Sitar",c:"Musique",d:3},{w:"Didgeridoo",c:"Musique",d:3},
+  {w:"Ukulélé",c:"Musique",d:2},{w:"Banjo",c:"Musique",d:2},{w:"Mandoline",c:"Musique",d:2},
+  {w:"Rock",c:"Musique",d:1},{w:"Jazz",c:"Musique",d:1},{w:"Blues",c:"Musique",d:1},
+  {w:"Classique",c:"Musique",d:1},{w:"Reggae",c:"Musique",d:1},{w:"Hip-hop",c:"Musique",d:1},
+  {w:"Opéra",c:"Musique",d:2},{w:"Flamenco",c:"Musique",d:2},{w:"Bossa nova",c:"Musique",d:2},
+  {w:"Techno",c:"Musique",d:1},{w:"Salsa",c:"Musique",d:1},{w:"Valse",c:"Musique",d:1},
+  {w:"Tango",c:"Musique",d:1},{w:"Polka",c:"Musique",d:2},{w:"Sonate",c:"Musique",d:2},
+  {w:"Symphonie",c:"Musique",d:2},{w:"Concerto",c:"Musique",d:2},{w:"Fugue",c:"Musique",d:3},
+  {w:"Opérette",c:"Musique",d:3},{w:"A cappella",c:"Musique",d:2},{w:"Rap",c:"Musique",d:1},
+
+  // ── TRANSPORT ──
+  {w:"Avion",c:"Transport",d:1},{w:"Hélicoptère",c:"Transport",d:1},{w:"Bateau",c:"Transport",d:1},
+  {w:"Sous-marin",c:"Transport",d:1},{w:"Train",c:"Transport",d:1},{w:"Métro",c:"Transport",d:1},
+  {w:"Tramway",c:"Transport",d:1},{w:"Bus",c:"Transport",d:1},{w:"Taxi",c:"Transport",d:1},
+  {w:"Moto",c:"Transport",d:1},{w:"Scooter",c:"Transport",d:1},{w:"Vélo",c:"Transport",d:1},
+  {w:"Trottinette",c:"Transport",d:1},{w:"Fusée",c:"Transport",d:1},{w:"Montgolfière",c:"Transport",d:1},
+  {w:"Deltaplane",c:"Transport",d:2},{w:"Parachute",c:"Transport",d:1},{w:"Téléphérique",c:"Transport",d:2},
+  {w:"Hovercraft",c:"Transport",d:3},{w:"Zeppelin",c:"Transport",d:2},{w:"Chariot",c:"Transport",d:1},
+  {w:"Carriole",c:"Transport",d:2},{w:"Diligence",c:"Transport",d:2},{w:"Gondole",c:"Transport",d:2},
+  {w:"Pirogue",c:"Transport",d:2},{w:"Kayak",c:"Transport",d:1},{w:"Canoë",c:"Transport",d:1},
+  {w:"Pédalo",c:"Transport",d:1},{w:"Voilier",c:"Transport",d:1},{w:"Ferry",c:"Transport",d:1},
+  {w:"Porte-avions",c:"Transport",d:2},{w:"Sous-marin nucléaire",c:"Transport",d:3},
+  {w:"Luge",c:"Transport",d:1},{w:"Traîneau",c:"Transport",d:1},{w:"Ski-doo",c:"Transport",d:2},
+
+  // ── ÉMOTIONS & ÉTATS ──
+  {w:"Joie",c:"Émotions",d:1},{w:"Tristesse",c:"Émotions",d:1},{w:"Colère",c:"Émotions",d:1},
+  {w:"Peur",c:"Émotions",d:1},{w:"Surprise",c:"Émotions",d:1},{w:"Dégoût",c:"Émotions",d:1},
+  {w:"Timidité",c:"Émotions",d:1},{w:"Jalousie",c:"Émotions",d:1},{w:"Nostalgie",c:"Émotions",d:2},
+  {w:"Mélancolie",c:"Émotions",d:2},{w:"Euphorie",c:"Émotions",d:2},{w:"Anxiété",c:"Émotions",d:2},
+  {w:"Embarras",c:"Émotions",d:2},{w:"Indignation",c:"Émotions",d:2},{w:"Admiration",c:"Émotions",d:2},
+  {w:"Compassion",c:"Émotions",d:2},{w:"Extase",c:"Émotions",d:2},{w:"Déprime",c:"Émotions",d:2},
+  {w:"Hystérie",c:"Émotions",d:3},{w:"Délire",c:"Émotions",d:3},{w:"Fierté",c:"Émotions",d:1},
+  {w:"Honte",c:"Émotions",d:1},{w:"Culpabilité",c:"Émotions",d:2},{w:"Envie",c:"Émotions",d:1},
+
+  // ── CONTES & MYTHOLOGIE ──
+  {w:"Cendrillon",c:"Contes",d:1},{w:"Blanche-Neige",c:"Contes",d:1},{w:"Le Petit Chaperon rouge",c:"Contes",d:1},
+  {w:"Rapunzel",c:"Contes",d:1},{w:"La Belle au bois dormant",c:"Contes",d:1},
+  {w:"La Petite Sirène",c:"Contes",d:1},{w:"Jack et le haricot magique",c:"Contes",d:1},
+  {w:"Hansel et Gretel",c:"Contes",d:1},{w:"Le Vilain Petit Canard",c:"Contes",d:1},
+  {w:"Les Trois Petits Cochons",c:"Contes",d:1},{w:"Peter Pan",c:"Contes",d:1},
+  {w:"Alice au pays des merveilles",c:"Contes",d:1},{w:"Pinocchio",c:"Contes",d:1},
+  {w:"Ulysse",c:"Contes",d:2},{w:"Hercule",c:"Contes",d:1},{w:"Achille",c:"Contes",d:2},
+  {w:"Méduse (mythologie)",c:"Contes",d:2},{w:"Minotaure",c:"Contes",d:2},{w:"Cyclope",c:"Contes",d:2},
+  {w:"Phénix",c:"Contes",d:2},{w:"Dragon",c:"Contes",d:1},{w:"Licorne",c:"Contes",d:1},
+  {w:"Elfe",c:"Contes",d:1},{w:"Lutin",c:"Contes",d:1},{w:"Nain",c:"Contes",d:1},
+  {w:"Ogre",c:"Contes",d:1},{w:"Vampire",c:"Contes",d:1},{w:"Loup-garou",c:"Contes",d:1},
+  {w:"Zombie",c:"Contes",d:1},{w:"Fantôme",c:"Contes",d:1},{w:"Sorcière",c:"Contes",d:1},
+
+  // ── VÊTEMENTS & MODE ──
+  {w:"Robe de mariée",c:"Mode",d:1},{w:"Smoking",c:"Mode",d:1},{w:"Kimono",c:"Mode",d:1},
+  {w:"Sari",c:"Mode",d:2},{w:"Kilt",c:"Mode",d:1},{w:"Beret",c:"Mode",d:1},
+  {w:"Chapeau de cowboy",c:"Mode",d:1},{w:"Haut de forme",c:"Mode",d:1},{w:"Turban",c:"Mode",d:1},
+  {w:"Burqa",c:"Mode",d:2},{w:"Poncho",c:"Mode",d:1},{w:"Imperméable",c:"Mode",d:1},
+  {w:"Trench-coat",c:"Mode",d:2},{w:"Blouson en cuir",c:"Mode",d:1},{w:"Veste à paillettes",c:"Mode",d:1},
+  {w:"Jean déchiré",c:"Mode",d:1},{w:"Salopette",c:"Mode",d:1},{w:"Combinaison de ski",c:"Mode",d:1},
+  {w:"Maillot de bain",c:"Mode",d:1},{w:"Bikini",c:"Mode",d:1},{w:"Chaussures à talons",c:"Mode",d:1},
+  {w:"Bottes de cowboy",c:"Mode",d:1},{w:"Chaussures de ballet",c:"Mode",d:1},
+  {w:"Baskets",c:"Mode",d:1},{w:"Sabots",c:"Mode",d:1},{w:"Monocle",c:"Mode",d:2},
+  {w:"Bretelles",c:"Mode",d:1},{w:"Nœud papillon",c:"Mode",d:1},{w:"Bandana",c:"Mode",d:1},
+  {w:"Écharpe",c:"Mode",d:1},{w:"Mitaines",c:"Mode",d:1},{w:"Gants de boxe",c:"Mode",d:1},
+  {w:"Uniforme de pompier",c:"Mode",d:1},{w:"Toge",c:"Mode",d:2},{w:"Armure de chevalier",c:"Mode",d:1},
+  {w:"Costume de superhéros",c:"Mode",d:1},{w:"Pyjama",c:"Mode",d:1},{w:"Robe de chambre",c:"Mode",d:1},
+  {w:"Camisole de force",c:"Mode",d:2},{w:"Maillot de football",c:"Mode",d:1},
+
+  // ── MAISON & INTÉRIEUR ──
+  {w:"Canapé",c:"Maison",d:1},{w:"Fauteuil à bascule",c:"Maison",d:1},{w:"Hamac",c:"Maison",d:1},
+  {w:"Pouf",c:"Maison",d:1},{w:"Lustre",c:"Maison",d:1},{w:"Cheminée",c:"Maison",d:1},
+  {w:"Escalier en colimaçon",c:"Maison",d:2},{w:"Mezzanine",c:"Maison",d:2},{w:"Verrière",c:"Maison",d:2},
+  {w:"Jacuzzi",c:"Maison",d:2},{w:"Sauna",c:"Maison",d:1},{w:"Cave à vin",c:"Maison",d:2},
+  {w:"Grenier",c:"Maison",d:1},{w:"Sous-sol",c:"Maison",d:1},{w:"Terrasse",c:"Maison",d:1},
+  {w:"Pergola",c:"Maison",d:2},{w:"Véranda",c:"Maison",d:2},{w:"Piscine",c:"Maison",d:1},
+  {w:"Fontaine",c:"Maison",d:1},{w:"Composteur",c:"Maison",d:2},{w:"Poulailler",c:"Maison",d:2},
+  {w:"Serre",c:"Maison",d:1},{w:"Potager",c:"Maison",d:1},{w:"Haie",c:"Maison",d:1},
+  {w:"Bac à sable",c:"Maison",d:1},{w:"Toboggan",c:"Maison",d:1},{w:"Balançoire",c:"Maison",d:1},
+  {w:"Barbecue",c:"Maison",d:1},{w:"Parasol",c:"Maison",d:1},{w:"Transat",c:"Maison",d:1},
+  {w:"Coffre-fort",c:"Maison",d:2},{w:"Interphone",c:"Maison",d:1},{w:"Vide-ordures",c:"Maison",d:2},
+  {w:"Monte-charge",c:"Maison",d:2},{w:"Toboggan de piscine",c:"Maison",d:1},
+  {w:"Bibliothèque murale",c:"Maison",d:1},{w:"Tableau blanc",c:"Maison",d:1},
+  {w:"Bébé moniteur",c:"Maison",d:2},{w:"Sonnette",c:"Maison",d:1},{w:"Verrou",c:"Maison",d:1},
+
+  // ── JEUX & LOISIRS ──
+  {w:"Jeu d'échecs",c:"Jeux",d:1},{w:"Monopoly",c:"Jeux",d:1},{w:"Scrabble",c:"Jeux",d:1},
+  {w:"Poker",c:"Jeux",d:1},{w:"Belote",c:"Jeux",d:2},{w:"Tarot",c:"Jeux",d:2},
+  {w:"Jeux de dés",c:"Jeux",d:1},{w:"Backgammon",c:"Jeux",d:2},{w:"Rubik's Cube",c:"Jeux",d:1},
+  {w:"Yo-yo",c:"Jeux",d:1},{w:"Frisbee",c:"Jeux",d:1},{w:"Cerf-volant",c:"Jeux",d:1},
+  {w:"Patin à roulettes",c:"Jeux",d:1},{w:"Skateboard",c:"Jeux",d:1},{w:"Hula hoop",c:"Jeux",d:1},
+  {w:"Marelle",c:"Jeux",d:1},{w:"Cache-cache",c:"Jeux",d:1},{w:"1-2-3 Soleil",c:"Jeux",d:1},
+  {w:"Jeu de la chaise musicale",c:"Jeux",d:1},{w:"Chasse au trésor",c:"Jeux",d:1},
+  {w:"Jeu de l'oie",c:"Jeux",d:1},{w:"Loto",c:"Jeux",d:1},{w:"Bingo",c:"Jeux",d:1},
+  {w:"Paintball",c:"Jeux",d:1},{w:"Laser game",c:"Jeux",d:1},{w:"Escape room",c:"Jeux",d:2},
+  {w:"Jeu de fléchettes",c:"Jeux",d:1},{w:"Flippers",c:"Jeux",d:1},{w:"Babyfoot",c:"Jeux",d:1},
+  {w:"Billard américain",c:"Jeux",d:1},{w:"Jeu de paume",c:"Jeux",d:3},{w:"Pelle & seau",c:"Jeux",d:1},
+  {w:"Dinette",c:"Jeux",d:1},{w:"Lego",c:"Jeux",d:1},{w:"Puzzle 1000 pièces",c:"Jeux",d:1},
+  {w:"Jeu vidéo",c:"Jeux",d:1},{w:"Réalité augmentée",c:"Jeux",d:2},{w:"Simulateur de vol",c:"Jeux",d:2},
+  {w:"Jeu de cartes à collectionner",c:"Jeux",d:2},{w:"Figurines de collection",c:"Jeux",d:2},
+  {w:"Maquette",c:"Jeux",d:2},{w:"Train électrique",c:"Jeux",d:1},{w:"Cerf-volant acrobatique",c:"Jeux",d:2},
+
+  // ── MÉTIERS (suite) ──
+  {w:"Boucher",c:"Métiers",d:1},{w:"Poissonnier",c:"Métiers",d:1},{w:"Fromager",c:"Métiers",d:1},
+  {w:"Pâtissier",c:"Métiers",d:1},{w:"Charcutier",c:"Métiers",d:2},{w:"Caviste",c:"Métiers",d:2},
+  {w:"Barista",c:"Métiers",d:2},{w:"Pizzaiolo",c:"Métiers",d:2},{w:"Sushi chef",c:"Métiers",d:2},
+  {w:"Guide de randonnée",c:"Métiers",d:2},{w:"Moniteur de ski",c:"Métiers",d:1},
+  {w:"Maître-nageur",c:"Métiers",d:1},{w:"Coach sportif",c:"Métiers",d:1},
+  {w:"Arbitre",c:"Métiers",d:1},{w:"Entraîneur",c:"Métiers",d:1},{w:"Scout",c:"Métiers",d:1},
+  {w:"Explorateur",c:"Métiers",d:1},{w:"Alpiniste",c:"Métiers",d:2},{w:"Spéléologue",c:"Métiers",d:2},
+  {w:"Océanographe",c:"Métiers",d:3},{w:"Entomologiste",c:"Métiers",d:3},{w:"Sommelier de thé",c:"Métiers",d:3},
+  {w:"Nez (parfumeur)",c:"Métiers",d:3},{w:"Maître chocolatier",c:"Métiers",d:2},
+  {w:"Conteur",c:"Métiers",d:2},{w:"Mime",c:"Métiers",d:1},{w:"Cracheur de feu",c:"Métiers",d:2},
+  {w:"Magicien",c:"Métiers",d:1},{w:"Clown",c:"Métiers",d:1},{w:"Acrobate",c:"Métiers",d:1},
+  {w:"Dompteur",c:"Métiers",d:1},{w:"Trapéziste",c:"Métiers",d:2},{w:"Funambule",c:"Métiers",d:2},
+
+  // ── INVENTIONS & OBJETS HISTORIQUES ──
+  {w:"Télescope de Galilée",c:"Histoire",d:2},{w:"Machine à vapeur",c:"Histoire",d:1},
+  {w:"Locomotive",c:"Histoire",d:1},{w:"Guillotine",c:"Histoire",d:1},{w:"Catapulte",c:"Histoire",d:1},
+  {w:"Arbalète",c:"Histoire",d:1},{w:"Épée",c:"Histoire",d:1},{w:"Bouclier",c:"Histoire",d:1},
+  {w:"Casque de gladiateur",c:"Histoire",d:1},{w:"Trône",c:"Histoire",d:1},
+  {w:"Couronne",c:"Histoire",d:1},{w:"Sceptre",c:"Histoire",d:1},{w:"Tonneau",c:"Histoire",d:1},
+  {w:"Parchemin",c:"Histoire",d:1},{w:"Plume et encrier",c:"Histoire",d:1},
+  {w:"Imprimerie",c:"Histoire",d:2},{w:"Boussole",c:"Histoire",d:1},{w:"Sextant",c:"Histoire",d:2},
+  {w:"Cadran solaire",c:"Histoire",d:1},{w:"Abaque",c:"Histoire",d:2},
+  {w:"Alambic",c:"Histoire",d:3},{w:"Guillocheur",c:"Histoire",d:3},{w:"Menhir",c:"Histoire",d:2},
+  {w:"Dolmen",c:"Histoire",d:2},{w:"Obelisque",c:"Histoire",d:2},{w:"Sarcophage",c:"Histoire",d:2},
+  {w:"Hiéroglyphe",c:"Histoire",d:2},{w:"Papyrus",c:"Histoire",d:2},{w:"Momie",c:"Histoire",d:1},
+  {w:"Gladiateur",c:"Histoire",d:1},{w:"Légionnaire romain",c:"Histoire",d:1},
+  {w:"Chevalier en armure",c:"Histoire",d:1},{w:"Troubadour",c:"Histoire",d:2},
+  {w:"Alchimiste",c:"Histoire",d:2},{w:"Inquisiteur",c:"Histoire",d:2},
+  {w:"Conquistador",c:"Histoire",d:2},{w:"Mousquetaire",c:"Histoire",d:1},
+  {w:"Corsaire",c:"Histoire",d:2},{w:"Pirate des mers du sud",c:"Histoire",d:2},
+  {w:"Samouraï",c:"Histoire",d:1},{w:"Ninja",c:"Histoire",d:1},{w:"Shaman",c:"Histoire",d:2},
+  {w:"Viking",c:"Histoire",d:1},{w:"Pharaon",c:"Histoire",d:1},{w:"Centurion",c:"Histoire",d:2},
+
+  // ── SITUATIONS AMUSANTES ──
+  {w:"Rater son réveil",c:"Situations",d:1},{w:"Glisser sur une peau de banane",c:"Situations",d:1},
+  {w:"Parler à quelqu'un qui a les écouteurs",c:"Situations",d:1},
+  {w:"Chercher ses lunettes avec ses lunettes",c:"Situations",d:2},
+  {w:"Sortir par la mauvaise sortie",c:"Situations",d:1},
+  {w:"Se tromper de prénom",c:"Situations",d:1},{w:"Arriver en retard à son mariage",c:"Situations",d:2},
+  {w:"Commander en mauvaise langue",c:"Situations",d:2},{w:"Rentrer dans une vitre",c:"Situations",d:1},
+  {w:"Trébucher sur rien",c:"Situations",d:1},{w:"Faire tomber son plateau à la cantine",c:"Situations",d:1},
+  {w:"Se retrouver nu dans un rêve",c:"Situations",d:2},{w:"Oublier son texte sur scène",c:"Situations",d:1},
+  {w:"Éternuer pendant une réunion",c:"Situations",d:1},{w:"Confondre sel et sucre",c:"Situations",d:1},
+  {w:"S'endormir dans l'avion",c:"Situations",d:1},{w:"Mettre son pull à l'envers",c:"Situations",d:1},
+  {w:"Pousser une porte qui se tire",c:"Situations",d:1},{w:"Envoyer un SMS au mauvais destinataire",c:"Situations",d:1},
+  {w:"Rater la poignée de main",c:"Situations",d:1},{w:"Chanter sous la pluie",c:"Situations",d:1},
+  {w:"Danser tout seul en faisant les courses",c:"Situations",d:1},
+  {w:"Parler tout seul en public",c:"Situations",d:1},{w:"Perdre son ticket de caisse",c:"Situations",d:1},
+  {w:"Chercher sa voiture dans le parking",c:"Situations",d:1},
+  {w:"Rater le bus sous la pluie",c:"Situations",d:1},{w:"Se prendre les pieds dans le tapis",c:"Situations",d:1},
+  {w:"Applaudir quand personne d'autre n'applaudit",c:"Situations",d:2},
+  {w:"Payer avec une carte déclinée",c:"Situations",d:1},{w:"Glisser sur le verglas",c:"Situations",d:1},
+  {w:"Écraser une araignée imaginaire",c:"Situations",d:1},{w:"Faire semblant de téléphoner",c:"Situations",d:1},
+  {w:"Mimer une contorsionniste",c:"Situations",d:2},{w:"Imiter son patron",c:"Situations",d:1},
+  {w:"Faire du stop sous la pluie",c:"Situations",d:1},{w:"Perdre ses bagages à l'aéroport",c:"Situations",d:1},
+  {w:"Attendre quelqu'un qui n'arrive pas",c:"Situations",d:1},
+  {w:"Manger des spaghettis trop longs",c:"Situations",d:1},{w:"Souffler des bougies qui se rallument",c:"Situations",d:1},
+  {w:"Rater la photo de groupe",c:"Situations",d:1},{w:"Oublier les paroles au karaoké",c:"Situations",d:1},
+
+  // ── ABSTRACT (difficiles) ──
+  {w:"Démocratie",c:"Abstrait",d:3},{w:"Justice",c:"Abstrait",d:3},{w:"Liberté",c:"Abstrait",d:3},
+  {w:"Égalité",c:"Abstrait",d:3},{w:"Révolution",c:"Abstrait",d:2},{w:"Inflation",c:"Abstrait",d:3},
+  {w:"Récession",c:"Abstrait",d:3},{w:"Mondialisation",c:"Abstrait",d:3},{w:"Paradoxe",c:"Abstrait",d:3},
+  {w:"Synapse",c:"Abstrait",d:3},{w:"Conscience",c:"Abstrait",d:3},{w:"Mémoire",c:"Abstrait",d:2},
+  {w:"Hasard",c:"Abstrait",d:2},{w:"Destin",c:"Abstrait",d:2},{w:"Éternité",c:"Abstrait",d:3},
+  {w:"Infini",c:"Abstrait",d:2},{w:"Relativité",c:"Abstrait",d:3},{w:"Entropie",c:"Abstrait",d:3},
+  {w:"Illusion",c:"Abstrait",d:2},{w:"Intuition",c:"Abstrait",d:2},{w:"Émerveillement",c:"Abstrait",d:2},
+
+  // ── SCIENCE & TECH ──
+  {w:"Atome",c:"Science",d:1},{w:"Gravité",c:"Science",d:1},{w:"Robot aspirateur",c:"Science",d:1},
+  {w:"Impression 3D",c:"Science",d:2},{w:"Drone",c:"Science",d:1},{w:"GPS",c:"Science",d:1},
+  {w:"Radar",c:"Science",d:2},{w:"Sonar",c:"Science",d:2},{w:"Laser",c:"Science",d:1},
+  {w:"Scanner médical",c:"Science",d:2},{w:"Greffe d'organe",c:"Science",d:2},{w:"Vaccin",c:"Science",d:1},
+  {w:"Antibiotique",c:"Science",d:2},{w:"Prothèse bionique",c:"Science",d:3},{w:"ADN",c:"Science",d:1},{w:"Trou noir",c:"Science",d:2},
+  {w:"Supernova",c:"Science",d:2},{w:"Gravité",c:"Science",d:1},{w:"Magnétisme",c:"Science",d:2},
+  {w:"Clonage",c:"Science",d:2},{w:"Téléportation",c:"Science",d:2},{w:"Intelligence artificielle",c:"Science",d:2},
+  {w:"Réalité virtuelle",c:"Science",d:2},{w:"Robot",c:"Science",d:1},{w:"Cyborg",c:"Science",d:2},
+  {w:"Hologramme",c:"Science",d:2},{w:"Wifi",c:"Science",d:1},{w:"Bluetooth",c:"Science",d:1},
+  {w:"Algorithme",c:"Science",d:2},{w:"Cryptage",c:"Science",d:3},{w:"Blockchain",c:"Science",d:3},
+  {w:"Satellite",c:"Science",d:1},{w:"Sonde spatiale",c:"Science",d:2},{w:"Station spatiale",c:"Science",d:2},
+  {w:"Réacteur nucléaire",c:"Science",d:2},{w:"Superconducteur",c:"Science",d:3},{w:"Quark",c:"Science",d:3},
+  {w:"Nano­technologie",c:"Science",d:3},{w:"Photosynthèse",c:"Science",d:2},{w:"Osmose",c:"Science",d:3},
+  {w:"Catalyse",c:"Science",d:3},{w:"Fission nucléaire",c:"Science",d:3},{w:"Fusion froide",c:"Science",d:3},
+];
+
+// ══════════════════════════════
+//  CATEGORIES
+// ══════════════════════════════
+const ALL_CATEGORIES = [...new Set(WORDS.map(w => w.c))];
+
+// ══════════════════════════════
+//  INIT
+// ══════════════════════════════
+function init() {
+  selectedCategories = new Set(ALL_CATEGORIES);
+  const catGrid = document.getElementById('cat-toggles');
+  ALL_CATEGORIES.forEach(cat => {
+    const pill = document.createElement('button');
+    pill.className = 'cat-pill active';
+    pill.textContent = cat;
+    pill.onclick = () => {
+      pill.classList.toggle('active');
+      if (pill.classList.contains('active')) selectedCategories.add(cat);
+      else selectedCategories.delete(cat);
+    };
+    catGrid.appendChild(pill);
+  });
+
+  document.querySelectorAll('#timer-options .setting-card').forEach(card => {
+    card.onclick = () => {
+      document.querySelectorAll('#timer-options .setting-card').forEach(c => c.classList.remove('selected'));
+      card.classList.add('selected');
+      timerDuration = parseInt(card.dataset.val);
+    };
+  });
+
+  document.querySelectorAll('#pass-options .setting-card').forEach(card => {
+    card.onclick = () => {
+      document.querySelectorAll('#pass-options .setting-card').forEach(c => c.classList.remove('selected'));
+      card.classList.add('selected');
+      maxPasses = parseInt(card.dataset.val);
+    };
+  });
+}
+
+// ══════════════════════════════
+//  SCREEN MANAGEMENT
+// ══════════════════════════════
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+function showRules() { showScreen('screen-rules'); }
+
+// ══════════════════════════════
+//  PLAYER MANAGEMENT
+// ══════════════════════════════
+function goToPlayers() {
+  renderPlayerList();
+  showScreen('screen-players');
+  setTimeout(() => document.getElementById('player-name-input').focus(), 100);
+}
+
+function addPlayer() {
+  const input = document.getElementById('player-name-input');
+  const name = input.value.trim();
+  if (!name) return;
+  if (players.length >= 10) { alert('Maximum 10 joueurs !'); return; }
+  if (players.find(p => p.name.toLowerCase() === name.toLowerCase())) {
+    alert('Ce nom est déjà pris !'); return;
+  }
+  players.push({
+    name,
+    avatar: AVATARS[players.length % AVATARS.length],
+    color: PLAYER_COLORS[players.length % PLAYER_COLORS.length],
+    totalPts: 0,
+    totalOk: 0,
+    turns: 0
+  });
+  input.value = '';
+  input.focus();
+  renderPlayerList();
+}
+
+function removePlayer(idx) {
+  players.splice(idx, 1);
+  renderPlayerList();
+}
+
+function renderPlayerList() {
+  const list = document.getElementById('player-list');
+  list.innerHTML = '';
+  players.forEach((p, i) => {
+    const div = document.createElement('div');
+    div.className = 'player-item';
+    div.innerHTML = `
+      <div class="player-avatar" style="background:${p.color}22;border:2px solid ${p.color}">${p.avatar}</div>
+      <span class="player-name-text">${p.name}</span>
+      <span class="player-order">Joueur ${i+1}</span>
+      <button class="btn-remove" onclick="removePlayer(${i})" title="Supprimer">✕</button>`;
+    list.appendChild(div);
+  });
+
+  const info = document.getElementById('player-count-info');
+  const btn = document.getElementById('start-game-btn');
+  if (players.length >= 2) {
+    info.textContent = `${players.length} joueur${players.length>1?'s':''} — prêts à jouer !`;
+    info.style.display = 'block';
+    btn.style.display = 'inline-block';
+  } else {
+    info.textContent = players.length === 1 ? 'Ajoute au moins un autre joueur' : '';
+    info.style.display = players.length === 1 ? 'block' : 'none';
+    btn.style.display = 'none';
+  }
+}
+
+// ══════════════════════════════
+//  GAME FLOW
+// ══════════════════════════════
+function startGameWithPlayers() {
+  if (players.length < 2) return;
+  // Reset all player scores
+  players.forEach(p => { p.totalPts = 0; p.totalOk = 0; p.turns = 0; });
+  currentPlayerIdx = 0;
+  globalRound = 1;
+  // Build fresh shuffled word pool
+  let pool = WORDS.filter(w => selectedCategories.has(w.c));
+  if (!pool.length) { alert('Sélectionne au moins une catégorie !'); return; }
+  gameWords = shuffle([...pool]);
+  currentIndex = 0;
+  showBetweenTurns();
+}
+
+function showBetweenTurns() {
+  const p = players[currentPlayerIdx];
+  document.getElementById('turn-avatar').textContent = p.avatar;
+  document.getElementById('turn-name').textContent = p.name;
+  document.getElementById('turn-round-display').textContent = globalRound;
+  document.getElementById('turn-of-display').textContent =
+    `${currentPlayerIdx + 1} / ${players.length}`;
+  renderScoreboard('between-scoreboard', currentPlayerIdx);
+  showScreen('screen-between');
+}
+
+function startCurrentTurn() {
+  const p = players[currentPlayerIdx];
+  // If words exhausted, reshuffle
+  if (currentIndex >= gameWords.length) {
+    let pool = WORDS.filter(w => selectedCategories.has(w.c));
+    gameWords = shuffle([...pool]);
+    currentIndex = 0;
+  }
+  // Reset turn state
+  scoreOk = 0; scoreSkip = 0; scorePoints = 0;
+  passesLeft = maxPasses;
+  sessionResults = [];
+  timerValue = timerDuration;
+  timerStarted = false;
+  clearInterval(timerInterval);
+
+  // Update banner
+  document.getElementById('cpb-avatar').textContent = p.avatar;
+  document.getElementById('cpb-name').textContent = p.name;
+  document.getElementById('cpb-pts').textContent = '0';
+  document.getElementById('timer-ring').classList.remove('warning');
+  updateScoreDisplay();
+  updateProgress();
+  setTimerDisplay(timerValue, 'green');
+  setCircle(timerValue, timerValue);
+
+  showScreen('screen-game');
+  loadWord();
+}
+
+function startGame() { startCurrentTurn(); } // kept for compatibility
+
+function loadWord() {
+  if (currentIndex >= gameWords.length) {
+    // reshuffle transparently mid-turn if needed
+    let pool = WORDS.filter(w => selectedCategories.has(w.c));
+    gameWords = [...gameWords, ...shuffle([...pool])];
+  }
+
+  document.getElementById('word-hidden').style.display = 'block';
+  document.getElementById('word-text').style.display = 'none';
+  document.getElementById('word-category').style.display = 'none';
+  document.getElementById('difficulty-badge').style.display = 'none';
+  document.getElementById('reveal-btn').style.display = 'inline-block';
+  document.getElementById('action-row').style.display = 'none';
+  document.getElementById('word-card').classList.remove('revealed');
+  updatePassesDisplay();
+}
+
+function revealWord() {
+  if (currentIndex >= gameWords.length) return;
+  const word = gameWords[currentIndex];
+
+  document.getElementById('word-hidden').style.display = 'none';
+  document.getElementById('reveal-btn').style.display = 'none';
+  const wt = document.getElementById('word-text');
+  wt.textContent = word.w; wt.style.display = 'block';
+  const wc = document.getElementById('word-category');
+  wc.textContent = word.c; wc.style.display = 'block';
+  const db = document.getElementById('difficulty-badge');
+  db.innerHTML = starsHTML(word.d) + `<span class="diff-label">${diffLabel(word.d)}</span>`;
+  db.style.display = 'flex';
+  document.getElementById('word-card').classList.add('revealed');
+  document.getElementById('action-row').style.display = 'flex';
+
+  if (!timerStarted) { startTimer(); timerStarted = true; }
+}
+
+function starsHTML(d) {
+  let s = '';
+  for (let i=1;i<=3;i++) s += `<span class="star">${i<=d?'★':'☆'}</span>`;
+  return s;
+}
+function diffLabel(d) { return ['','Facile','Moyen','Difficile'][d]; }
+
+function wordFound() {
+  const word = gameWords[currentIndex];
+  sessionResults.push({...word, result:'ok'});
+  scoreOk++; scorePoints += word.d; currentIndex++;
+  updateScoreDisplay(); updateProgress();
+  document.getElementById('cpb-pts').textContent = scorePoints;
+  loadWord();
+}
+
+function wordPass() {
+  if (maxPasses !== 99 && passesLeft <= 0) return;
+  const word = gameWords[currentIndex];
+  sessionResults.push({...word, result:'skip'});
+  scoreSkip++;
+  if (maxPasses !== 99) passesLeft--;
+  currentIndex++;
+  updateScoreDisplay(); updateProgress(); loadWord();
+  updatePassesDisplay();
+}
+
+function endTurn() {
+  clearInterval(timerInterval);
+  document.getElementById('global-timesup').classList.remove('show');
+
+  // Credit points to player
+  const p = players[currentPlayerIdx];
+  p.totalPts += scorePoints;
+  p.totalOk  += scoreOk;
+  p.turns++;
+
+  // Show turn results
+  document.getElementById('te-pts').textContent = scorePoints;
+  document.getElementById('te-ok').textContent  = scoreOk;
+  document.getElementById('te-skip').textContent = scoreSkip;
+
+  const list = document.getElementById('turn-results-list');
+  list.innerHTML = '';
+  sessionResults.forEach(r => {
+    const item = document.createElement('div');
+    item.className = 'result-item ' + (r.result==='ok' ? 'ok' : 'skip');
+    item.innerHTML = `<span class="ri-word">${r.w} <small style="color:var(--muted);font-size:11px">(${r.c})</small></span>
+      <span class="ri-pts">${r.result==='ok' ? '+'+r.d : '✗'}</span>`;
+    list.appendChild(item);
+  });
+
+  // Determine next player
+  const isLastOfRound = currentPlayerIdx === players.length - 1;
+  const nextIdx = (currentPlayerIdx + 1) % players.length;
+  document.getElementById('next-turn-btn').textContent =
+    isLastOfRound ? `🔄 Tour ${globalRound+1} — ${players[nextIdx].avatar} ${players[nextIdx].name}`
+                  : `➡ Au tour de ${players[nextIdx].avatar} ${players[nextIdx].name}`;
+
+  renderScoreboard('turn-end-scoreboard', currentPlayerIdx);
+  showScreen('screen-turn-end');
+}
+
+function nextTurn() {
+  const wasLast = currentPlayerIdx === players.length - 1;
+  currentPlayerIdx = (currentPlayerIdx + 1) % players.length;
+  if (wasLast) globalRound++;
+  showBetweenTurns();
+}
+
+function showFinalScoreboard() {
+  clearInterval(timerInterval);
+  renderFinalScoreboard();
+  showScreen('screen-end');
+  launchConfetti();
+}
+
+// ══════════════════════════════
+//  SCOREBOARD RENDERING
+// ══════════════════════════════
+function sortedPlayers() {
+  return [...players].sort((a,b) => b.totalPts - a.totalPts);
+}
+
+function renderScoreboard(containerId, activePlayerIdx) {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  el.innerHTML = '';
+  const sorted = sortedPlayers();
+  const maxPts = sorted[0]?.totalPts || 1;
+  const rankIcons = ['gold','silver','bronze'];
+
+  sorted.forEach((p, rank) => {
+    const isActive = players.indexOf(p) === activePlayerIdx;
+    const div = document.createElement('div');
+    div.className = 'sb-row' + (rank===0 && p.totalPts>0?' sb-leader':'') + (isActive?' sb-active':'');
+    div.innerHTML = `
+      <div class="sb-rank ${rankIcons[rank]||''}">${rank+1}</div>
+      <div class="sb-avatar">${p.avatar}</div>
+      <div style="flex:1">
+        <div class="sb-name">${p.name}${isActive?' <span style="font-size:11px;color:var(--purple-light)">← joue</span>':''}</div>
+        <div class="sb-detail">${p.totalOk} mots · ${p.turns} tour${p.turns!==1?'s':''}</div>
+      </div>
+      <div class="sb-pts">${p.totalPts}</div>
+      <div class="sb-bar" style="width:${maxPts>0?(p.totalPts/maxPts*100):0}%"></div>`;
+    el.appendChild(div);
+  });
+}
+
+function renderFinalScoreboard() {
+  const sorted = sortedPlayers();
+  const maxPts = sorted[0]?.totalPts || 1;
+  const rankIcons = ['gold','silver','bronze'];
+
+  // Podium
+  const podiumWrap = document.getElementById('podium-wrap');
+  podiumWrap.innerHTML = '';
+  if (sorted.length >= 2) {
+    const podium = document.createElement('div');
+    podium.className = 'podium';
+    // order: 2nd, 1st, 3rd
+    const podiumOrder = sorted.length >= 3
+      ? [sorted[1], sorted[0], sorted[2]]
+      : [sorted[1], sorted[0]];
+    const medals = ['🥈','🥇','🥉'];
+    const heights = [60, 90, 45];
+    podiumOrder.forEach((p, i) => {
+      const realRank = sorted.indexOf(p);
+      const block = document.createElement('div');
+      block.className = 'podium-block';
+      block.innerHTML = `
+        <div class="podium-avatar">${p.avatar}</div>
+        <div class="podium-name">${p.name}</div>
+        <div class="podium-pts">${p.totalPts} pts</div>
+        <div class="podium-stand" style="height:${heights[i]}px">${medals[realRank]||''}</div>`;
+      podium.appendChild(block);
+    });
+    podiumWrap.appendChild(podium);
+  }
+
+  // Full scoreboard
+  const el = document.getElementById('final-scoreboard');
+  el.innerHTML = '';
+  sorted.forEach((p, rank) => {
+    const div = document.createElement('div');
+    div.className = 'sb-row' + (rank===0?' sb-leader':'');
+    div.innerHTML = `
+      <div class="sb-rank ${rankIcons[rank]||''}">${rank+1}</div>
+      <div class="sb-avatar">${p.avatar}</div>
+      <div style="flex:1">
+        <div class="sb-name">${p.name}</div>
+        <div class="sb-detail">${p.totalOk} mots trouvés · ${p.turns} tour${p.turns!==1?'s':''}</div>
+      </div>
+      <div class="sb-pts">${p.totalPts}</div>
+      <div class="sb-bar" style="width:${maxPts>0?(p.totalPts/maxPts*100):0}%"></div>`;
+    el.appendChild(div);
+  });
+}
+
+// ══════════════════════════════
+//  HELPERS
+// ══════════════════════════════
+function updatePassesDisplay() {
+  const el = document.getElementById('passes-display');
+  if (maxPasses === 99) { el.textContent = 'Passes illimités'; return; }
+  el.innerHTML = `Passes restants : <span>${passesLeft}</span>`;
+}
+
+function updateScoreDisplay() {
+  document.getElementById('score-ok').textContent = scoreOk;
+  document.getElementById('score-skip').textContent = scoreSkip;
+  document.getElementById('score-pts').textContent = scorePoints;
+}
+
+function updateProgress() {
+  const pct = gameWords.length > 0 ? (currentIndex / gameWords.length) * 100 : 0;
+  document.getElementById('progress-fill').style.width = Math.min(pct,100) + '%';
+}
+
+function shuffle(arr) {
+  for (let i = arr.length-1; i>0; i--) {
+    const j = Math.floor(Math.random()*(i+1));
+    [arr[i],arr[j]] = [arr[j],arr[i]];
+  }
+  return arr;
+}
+
+// ══════════════════════════════
+//  TIMER
+// ══════════════════════════════
+function startTimer() {
+  timerValue = timerDuration;
+  clearInterval(timerInterval);
+  timerInterval = setInterval(() => {
+    timerValue--;
+    const color = timerValue > timerDuration * 0.5 ? 'green'
+                : timerValue > timerDuration * 0.2 ? 'orange' : 'red';
+    setTimerDisplay(timerValue, color);
+    setCircle(timerValue, timerDuration);
+    if (timerValue <= timerDuration * 0.2) document.getElementById('timer-ring').classList.add('warning');
+    if (timerValue <= 0) { clearInterval(timerInterval); showTimesUp(); }
+  }, 1000);
+}
+
+function setTimerDisplay(val, color) {
+  const el = document.getElementById('timer-display');
+  el.textContent = Math.max(0, val);
+  const colors = { green: 'var(--green)', orange: 'var(--orange)', red: 'var(--red)' };
+  el.style.color = colors[color] || 'var(--white)';
+  document.getElementById('progress-circle').style.stroke = colors[color] || 'var(--green)';
+}
+
+function setCircle(current, total) {
+  const pct = Math.max(0, current / total);
+  document.getElementById('progress-circle').style.strokeDashoffset = CIRC * (1 - pct);
+}
+
+function showTimesUp() {
+  const overlay = document.getElementById('global-timesup');
+  overlay.classList.add('show');
+  setTimeout(() => { overlay.classList.remove('show'); endTurn(); }, 2200);
+}
+
+function endGame() { endTurn(); } // legacy
+
+// ══════════════════════════════
+//  CONFETTI
+// ══════════════════════════════
+function launchConfetti() {
+  const canvas = document.getElementById('confetti-canvas');
+  if (!canvas) return;
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  const ctx = canvas.getContext('2d');
+  const pieces = Array.from({length:120}, () => ({
+    x: Math.random() * canvas.width,
+    y: Math.random() * canvas.height - canvas.height,
+    w: Math.random()*10+4, h: Math.random()*6+4,
+    color: ['#FFD600','#7B2FBE','#2ECC71','#E74C3C','#3498DB','#F39C12'][Math.floor(Math.random()*6)],
+    rot: Math.random()*360, rotV: (Math.random()-0.5)*6,
+    vx: (Math.random()-0.5)*3, vy: Math.random()*3+2, alpha: 1
+  }));
+  let frame = 0;
+  function draw() {
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    pieces.forEach(p => {
+      ctx.save();
+      ctx.globalAlpha = p.alpha;
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.rot * Math.PI/180);
+      ctx.fillStyle = p.color;
+      ctx.fillRect(-p.w/2, -p.h/2, p.w, p.h);
+      ctx.restore();
+      p.x += p.vx; p.y += p.vy; p.rot += p.rotV;
+      if (frame > 120) p.alpha -= 0.012;
+    });
+    frame++;
+    if (frame < 240) requestAnimationFrame(draw);
+    else ctx.clearRect(0,0,canvas.width,canvas.height);
+  }
+  draw();
+}
+
+init();
+</script>
+</script>
+</body>
+</html>
